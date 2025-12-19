@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { RigidBody, RapierRigidBody } from '@react-three/rapier';
 import { useKeyboard } from '../../../hooks/useKeyboard';
@@ -8,6 +8,7 @@ import {
   MOUSE_SENSITIVITY,
   GROUNDED_RAY_DISTANCE,
   CAMERA_HEIGHT,
+  CAMERA_BACK_OFFSET,
   PLAYER_HALF_HEIGHT,
 } from '../../../constants/player';
 import * as THREE from 'three';
@@ -20,6 +21,11 @@ export default function Player() {
 
   // カメラの回転角度
   const rotationRef = useRef({ yaw: 0, pitch: 0 });
+  // モデルの参照（見た目の回転をここで制御する）
+  const modelRef = useRef<THREE.Group | null>(null);
+  // 表示状態をレンダー側に渡すための state
+  const [isMoving, setIsMoving] = useState(false);
+  const [headPitchState, setHeadPitchState] = useState(0);
   // ジャンプ押下の立ち上がり検出用
   const prevJumpRef = useRef(false);
   const raycasterRef = useRef(new THREE.Raycaster());
@@ -81,6 +87,10 @@ export default function Player() {
     // 速度の更新(Y軸は維持)
     playerRef.current.setLinvel({ x: direction.x, y: velocity.y, z: direction.z }, true);
 
+    // レンダーへ渡す状態を更新
+    setIsMoving(direction.length() > 0.01);
+    setHeadPitchState(rotationRef.current.pitch);
+
     // 接地判定: 中心から下向きにレイを飛ばし、ヒット距離が半高+マージン以内かを確認
     const rayOrigin = new THREE.Vector3(position.x, position.y, position.z);
     raycasterRef.current.set(rayOrigin, new THREE.Vector3(0, -1, 0));
@@ -96,9 +106,22 @@ export default function Player() {
     prevJumpRef.current = keys.jump;
 
     // カメラの位置と回転を更新
-    // カメラはプレイヤー中心 + 半高 + 任意のオフセットに配置する
-    camera.position.set(position.x, position.y + PLAYER_HALF_HEIGHT + CAMERA_HEIGHT, position.z);
+    // カメラはプレイヤー中心 + 半高 + 任意のオフセットに配置し、プレイヤーの向きに合わせて後方に引く
+    const camOffset = new THREE.Vector3(0, PLAYER_HALF_HEIGHT + CAMERA_HEIGHT, -CAMERA_BACK_OFFSET);
+    camOffset.applyEuler(new THREE.Euler(0, rotationRef.current.yaw, 0));
+    camera.position.set(
+      position.x + camOffset.x,
+      position.y + camOffset.y,
+      position.z + camOffset.z
+    );
     camera.rotation.set(rotationRef.current.pitch, rotationRef.current.yaw, 0);
+
+    // モデルの回転をカメラのヨーに合わせる（滑らかに追従）
+    if (modelRef.current) {
+      const currentY = modelRef.current.rotation.y;
+      const targetY = rotationRef.current.yaw;
+      modelRef.current.rotation.y = THREE.MathUtils.lerp(currentY, targetY, 0.12);
+    }
   });
 
   return (
@@ -111,8 +134,12 @@ export default function Player() {
       linearDamping={0.5}
     >
       {/* モデルは縮小して表示。コライダー中心に合わせて位置を調整 */}
-      <group position={[0, -PLAYER_HALF_HEIGHT * (1 / 3), 0]} scale={[1 / 3, 1 / 3, 1 / 3]}>
-        <PlayerModel />
+      <group
+        ref={modelRef}
+        position={[0, -PLAYER_HALF_HEIGHT * (1 / 3), 0]}
+        scale={[1 / 3, 1 / 3, 1 / 3]}
+      >
+        <PlayerModel play={isMoving} headPitch={headPitchState} />
       </group>
     </RigidBody>
   );
