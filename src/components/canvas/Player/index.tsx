@@ -2,12 +2,12 @@ import { useRef, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { RigidBody, RapierRigidBody } from '@react-three/rapier';
 import { useKeyboard } from '../../../hooks/useKeyboard';
-import { MOVE_SPEED, JUMP_FORCE, SENSITIVITY } from '../../../constants/player';
+import { MOVE_SPEED, JUMP_FORCE, SENSITIVITY, GROUNDED_EPS, CAMERA_HEIGHT } from '../../../constants/player';
 import * as THREE from 'three';
 
 export default function Player() {
   const playerRef = useRef<RapierRigidBody>(null);
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   const keys = useKeyboard();
 
   // カメラの回転角度
@@ -15,12 +15,19 @@ export default function Player() {
 
   // ポインターロックの設定
   useEffect(() => {
-    const handleClick = () => {
-      document.body.requestPointerLock();
+    const dom = gl.domElement;
+    if (!dom) return;
+
+    const handleClick = (e: MouseEvent) => {
+      // 左クリックのみポインタロックを要求（UI 要素の誤トリガを防ぐ）
+      if (e.button !== 0) return;
+      // Canvas 要素へフォーカスがある場合のみロックする
+      dom.requestPointerLock();
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (document.pointerLockElement === document.body) {
+      // Canvas がポインタロックしている場合のみカメラ回転を反映
+      if (document.pointerLockElement === dom) {
         rotationRef.current.yaw -= e.movementX * SENSITIVITY;
         rotationRef.current.pitch -= e.movementY * SENSITIVITY;
 
@@ -32,12 +39,13 @@ export default function Player() {
       }
     };
 
-    document.addEventListener('click', handleClick);
-    document.addEventListener('mousemove', handleMouseMove);
+    dom.addEventListener('click', handleClick);
+    // マウスムーブは document ではなく canvas 自体で監視しておく（移動イベントはロック時にキャンバスで発火）
+    dom.addEventListener('mousemove', handleMouseMove);
 
     return () => {
-      document.removeEventListener('click', handleClick);
-      document.removeEventListener('mousemove', handleMouseMove);
+      dom.removeEventListener('click', handleClick);
+      dom.removeEventListener('mousemove', handleMouseMove);
     };
   }, []);
 
@@ -63,12 +71,12 @@ export default function Player() {
     playerRef.current.setLinvel({ x: direction.x, y: velocity.y, z: direction.z }, true);
 
     // ジャンプ(地面にいる時のみ)
-    if (keys.jump && Math.abs(velocity.y) < 0.1) {
+    if (keys.jump && Math.abs(velocity.y) < GROUNDED_EPS) {
       playerRef.current.applyImpulse({ x: 0, y: JUMP_FORCE, z: 0 }, true);
     }
 
     // カメラの位置と回転を更新
-    camera.position.set(position.x, position.y + 0.5, position.z);
+    camera.position.set(position.x, position.y + CAMERA_HEIGHT, position.z);
     camera.rotation.set(rotationRef.current.pitch, rotationRef.current.yaw, 0);
   });
 
