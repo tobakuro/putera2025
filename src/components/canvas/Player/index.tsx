@@ -7,17 +7,22 @@ import {
   JUMP_FORCE,
   SENSITIVITY,
   GROUNDED_EPS,
+  GROUNDED_RAY_DISTANCE,
   CAMERA_HEIGHT,
 } from '../../../constants/player';
+import { PLAYER_HALF_HEIGHT } from '../../../constants/player';
 import * as THREE from 'three';
 
 export default function Player() {
   const playerRef = useRef<RapierRigidBody>(null);
-  const { camera, gl } = useThree();
+  const { camera, gl, scene } = useThree();
   const keys = useKeyboard();
 
   // カメラの回転角度
   const rotationRef = useRef({ yaw: 0, pitch: 0 });
+  // ジャンプ押下の立ち上がり検出用
+  const prevJumpRef = useRef(false);
+  const raycasterRef = useRef(new THREE.Raycaster());
 
   // ポインターロックの設定
   useEffect(() => {
@@ -76,10 +81,19 @@ export default function Player() {
     // 速度の更新(Y軸は維持)
     playerRef.current.setLinvel({ x: direction.x, y: velocity.y, z: direction.z }, true);
 
-    // ジャンプ(地面にいる時のみ)
-    if (keys.jump && Math.abs(velocity.y) < GROUNDED_EPS) {
+    // 接地判定: 中心から下向きにレイを飛ばし、ヒット距離が半高+マージン以内かを確認
+    const rayOrigin = new THREE.Vector3(position.x, position.y, position.z);
+    raycasterRef.current.set(rayOrigin, new THREE.Vector3(0, -1, 0));
+    const intersects = scene ? raycasterRef.current.intersectObjects(scene.children, true) : [];
+    const grounded =
+      intersects.length > 0 && intersects[0].distance <= PLAYER_HALF_HEIGHT + GROUNDED_RAY_DISTANCE;
+
+    // 立ち上がり検出でジャンプを発火（押し始めのみ）
+    const rising = keys.jump && !prevJumpRef.current;
+    if (rising && grounded) {
       playerRef.current.applyImpulse({ x: 0, y: JUMP_FORCE, z: 0 }, true);
     }
+    prevJumpRef.current = keys.jump;
 
     // カメラの位置と回転を更新
     camera.position.set(position.x, position.y + CAMERA_HEIGHT, position.z);
