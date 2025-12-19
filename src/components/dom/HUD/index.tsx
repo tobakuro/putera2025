@@ -1,5 +1,6 @@
 import React from 'react';
 import useGameStore from '../../../stores/useGameStore';
+import { useEffect, useState } from 'react';
 
 export default function HUD() {
   const playerHP = useGameStore((s) => s.playerHP);
@@ -8,7 +9,23 @@ export default function HUD() {
   const reserveAmmo = useGameStore((s) => s.reserveAmmo);
 
   // simple time placeholder (could be wired to store or game timer)
-  const timeText = '05:30';
+  const gameState = useGameStore((s) => s.gameState);
+  const [seconds, setSeconds] = useState(0);
+
+  // start/stop timer when gameState becomes 'playing'
+  useEffect(() => {
+    let id: number | undefined;
+    if (gameState === 'playing') {
+      id = window.setInterval(() => setSeconds((s) => s + 1), 1000);
+    }
+    return () => {
+      if (id !== undefined) clearInterval(id);
+    };
+  }, [gameState]);
+
+  const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
+  const ss = String(seconds % 60).padStart(2, '0');
+  const timeText = `${mm}:${ss}`;
 
   const containerStyle: React.CSSProperties = {
     position: 'fixed',
