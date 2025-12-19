@@ -27,6 +27,13 @@ type State = {
 
   // ゲームリセット
   resetGame: () => void;
+
+  // 鍵と目標
+  keysCollected: number;
+  totalKeys: number;
+  currentObjective: string;
+  collectKey: () => void;
+  setObjective: (objective: string) => void;
 };
 
 const INITIAL_STATE = {
@@ -37,6 +44,9 @@ const INITIAL_STATE = {
   currentAmmo: 30,
   maxAmmo: 30,
   reserveAmmo: 90,
+  keysCollected: 0,
+  totalKeys: 1,
+  currentObjective: 'カギを集めろ',
 };
 
 export const useGameStore = create<State>((set) => ({
@@ -84,7 +94,12 @@ export const useGameStore = create<State>((set) => ({
         reserveAmmo: s.reserveAmmo - available,
       };
     }),
-
+  // 鍵と目標
+  collectKey: () =>
+    set((s) => ({
+      keysCollected: Math.min(s.keysCollected + 1, s.totalKeys),
+    })),
+  setObjective: (objective) => set({ currentObjective: objective }),
   // ゲームリセット
   resetGame: () => set(INITIAL_STATE),
 }));

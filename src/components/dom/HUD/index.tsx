@@ -8,6 +8,9 @@ export default function HUD() {
   const maxHP = useGameStore((s) => s.maxHP);
   const currentAmmo = useGameStore((s) => s.currentAmmo);
   const reserveAmmo = useGameStore((s) => s.reserveAmmo);
+  const keysCollected = useGameStore((s) => s.keysCollected);
+  const totalKeys = useGameStore((s) => s.totalKeys);
+  const currentObjective = useGameStore((s) => s.currentObjective);
 
   // simple time placeholder (could be wired to store or game timer)
   const gameState = useGameStore((s) => s.gameState);
@@ -15,17 +18,17 @@ export default function HUD() {
 
   // start/stop timer when gameState becomes 'playing'
   useEffect(() => {
-    let id: number | undefined;
-    if (gameState === 'playing') {
-      // reset timer on new play session (defer to avoid synchronous setState in effect)
-      setTimeout(() => setSeconds(0), 0);
-      id = window.setInterval(() => setSeconds((s) => s + 1), 1000);
-    } else {
-      // ensure timer is reset when not playing
-      setTimeout(() => setSeconds(0), 0);
+    if (gameState !== 'playing') {
+      return;
     }
+
+    setTimeout(() => setSeconds(0), 0);
+    const id = window.setInterval(() => {
+      setSeconds((s) => s + 1);
+    }, 1000);
+
     return () => {
-      if (id !== undefined) clearInterval(id);
+      clearInterval(id);
     };
   }, [gameState]);
 
@@ -33,9 +36,14 @@ export default function HUD() {
   const ss = String(seconds % 60).padStart(2, '0');
   const timeText = `${mm}:${ss}`;
 
+  // HP bar configuration
+  const HP_BAR_MAX_BLOCKS = 12;
   // Safe HP calculations: guard against division by zero and invalid values
   const hpPercent = maxHP > 0 ? Math.round((playerHP / maxHP) * 100) : 0;
-  const hpBlocks = Math.max(0, Math.min(12, Math.round((hpPercent / 100) * 12)));
+  const hpBlocks = Math.max(
+    0,
+    Math.min(HP_BAR_MAX_BLOCKS, Math.round((hpPercent / 100) * HP_BAR_MAX_BLOCKS))
+  );
   const hpBar = '■'.repeat(hpBlocks);
 
   const containerStyle: React.CSSProperties = {
@@ -103,7 +111,7 @@ export default function HUD() {
       <div style={{ position: 'absolute', right: 16, top: 16 }}>
         <div style={panelStyle}>
           <div style={{ textAlign: 'center' }}>
-            <div>現在の目標: カギを集めろ</div>
+            <div>現在の目標: {currentObjective}</div>
             <div style={{ marginTop: 6 }}>
               鍵: [
               <Image
@@ -119,7 +127,7 @@ export default function HUD() {
                   display: 'inline-block',
                 }}
               />
-              ] (0/1)
+              ] ({keysCollected}/{totalKeys})
             </div>
           </div>
         </div>
@@ -165,7 +173,7 @@ export default function HUD() {
         />
       </div>
 
-      {/* Bottom-right: setting / placeholder rotated tag */}
+      {/* Bottom-right: 将来的に手のUIに差し替え予定*/}
       <div style={{ position: 'absolute', right: 16, bottom: 24, transform: 'rotate(-20deg)' }}>
         <div style={panelStyle}>
           <button
