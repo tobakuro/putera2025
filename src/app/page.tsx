@@ -3,6 +3,7 @@
 import React from 'react';
 import Scene from '../components/canvas/Scene';
 import Menu from '../components/dom/Menu';
+import HUD from '../components/dom/HUD';
 import useGameStore from '../stores/useGameStore';
 
 export default function Page() {
@@ -11,5 +12,10 @@ export default function Page() {
   // メニュー状態ならメニューを表示。Startで gameState を 'playing' にする。
   if (gameState === 'menu') return <Menu />;
 
-  return <Scene />;
+  return (
+    <>
+      <Scene />
+      <HUD />
+    </>
+  );
 }

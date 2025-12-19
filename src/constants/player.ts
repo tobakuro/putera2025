@@ -23,6 +23,11 @@ export const GROUNDED_EPS = 0.1;
 export const GROUNDED_RAY_DISTANCE = 0.15; // 単位: m
 
 // カメラの相対高さ（プレイヤー位置に対するオフセット）
-// カメラの相対高さ（プレイヤー位置に対するオフセット）
+
 // ここを上げてプレイヤー視点をやや高めにする
 export const CAMERA_HEIGHT = 1.0; // 単位: m
+// カメラをプレイヤーの後方に下がらせる距離（m）
+export const CAMERA_BACK_OFFSET = -3.2; // 正の値で後方へ
+
+// 歩行アニメの再生速度倍率（1.0 = 元の速度）
+export const WALK_SPEED = 1.6;
