@@ -1,4 +1,6 @@
+'use client';
 import React from 'react';
+import Image from 'next/image';
 import useGameStore from '../../../stores/useGameStore';
 import { useEffect, useState } from 'react';
 
@@ -62,9 +64,11 @@ export default function HUD() {
       <div style={{ position: 'absolute', left: 16, top: 16 }}>
         <div style={panelStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <img
+            <Image
               src="/textures/2D_UI/ライフ＿プレイヤー体力.png"
               alt="life"
+              width={28}
+              height={28}
               style={{ height: 28, ...imgResponsive }}
             />
             <div>
@@ -73,9 +77,11 @@ export default function HUD() {
                 {Math.round((playerHP / maxHP) * 100)}%
               </div>
               <div style={{ marginTop: 6 }}>
-                <img
+                <Image
                   src="/textures/2D_UI/タイム＿ゲームタイム.png"
                   alt="time"
+                  width={18}
+                  height={18}
                   style={{ height: 18, verticalAlign: 'middle', marginRight: 8, ...imgResponsive }}
                 />
                 <span>{timeText}</span>
@@ -92,9 +98,11 @@ export default function HUD() {
             <div>現在の目標: カギを集めろ</div>
             <div style={{ marginTop: 6 }}>
               鍵: [
-              <img
+              <Image
                 src="/textures/2D_UI/鍵＿所持状況確認.png"
                 alt="key"
+                width={18}
+                height={18}
                 style={{
                   height: 18,
                   verticalAlign: 'middle',
@@ -113,9 +121,11 @@ export default function HUD() {
       <div style={{ position: 'absolute', left: 16, bottom: 16 }}>
         <div style={panelStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <img
+            <Image
               src="/textures/2D_UI/弾丸＿弾数表示.png"
               alt="ammo"
+              width={36}
+              height={36}
               style={{ height: 36, ...imgResponsive }}
             />
             <div>
@@ -138,9 +148,11 @@ export default function HUD() {
           pointerEvents: 'none',
         }}
       >
-        <img
+        <Image
           src="/textures/2D_UI/エイムカーソル＿常に中央表示.png"
           alt="crosshair"
+          width={32}
+          height={32}
           style={{ height: 32, ...imgResponsive }}
         />
       </div>
@@ -148,9 +160,11 @@ export default function HUD() {
       {/* Bottom-right: setting / placeholder rotated tag */}
       <div style={{ position: 'absolute', right: 16, bottom: 24, transform: 'rotate(-20deg)' }}>
         <div style={panelStyle as React.CSSProperties}>
-          <img
+          <Image
             src="/textures/2D_UI/設定＿なくてもいい（ゲーム中断）.png"
             alt="settings"
+            width={36}
+            height={36}
             style={{ height: 36, ...imgResponsive }}
           />
         </div>
