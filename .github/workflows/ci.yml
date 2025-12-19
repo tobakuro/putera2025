@@ -2,7 +2,7 @@ name: FPS-App CI
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: ['main', 'develop']
     paths-ignore: ['resources/**', 'README.md']
   pull_request:
     paths-ignore: ['resources/**', 'README.md']
@@ -17,7 +17,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-      
+
       - name: Install Dependencies
         run: npm ci
 
@@ -32,9 +32,9 @@ jobs:
 
       - name: TypeScript Check
         run: npx tsc --noEmit
-        
+
       - name: Lint Check
         run: npm run lint
-        
+
       - name: Build Check
         run: npm run build

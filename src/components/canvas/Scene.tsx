@@ -3,32 +3,29 @@
 import { Canvas } from '@react-three/fiber';
 import { Physics, RigidBody } from '@react-three/rapier';
 import Player from './Player';
+import Level from './Level';
 
 export default function Scene() {
   return (
     <Canvas
+      shadows // 影を有効化
       camera={{
         position: [0, 5, 10],
         fov: 75,
       }}
       style={{ width: '100vw', height: '100vh' }}
     >
-      {/* 照明 */}
       <ambientLight intensity={0.5} />
-      <directionalLight position={[10, 10, 5]} intensity={1} />
+      <directionalLight
+        position={[10, 10, 5]}
+        intensity={1}
+        castShadow // ライトも影を落とすように
+      />
 
-      {/* 物理世界 */}
       <Physics gravity={[0, -9.81, 0]}>
-        {/* プレイヤー */}
         <Player />
 
-        {/* 床 */}
-        <RigidBody type="fixed" colliders="cuboid">
-          <mesh position={[0, -0.5, 0]} receiveShadow>
-            <boxGeometry args={[20, 1, 20]} />
-            <meshStandardMaterial color="#808080" />
-          </mesh>
-        </RigidBody>
+        <Level />
 
         {/* テスト用の立方体 */}
         <RigidBody colliders="cuboid">

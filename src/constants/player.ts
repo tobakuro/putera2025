@@ -23,4 +23,6 @@ export const GROUNDED_EPS = 0.1;
 export const GROUNDED_RAY_DISTANCE = 0.15; // 単位: m
 
 // カメラの相対高さ（プレイヤー位置に対するオフセット）
-export const CAMERA_HEIGHT = 0.5; // 単位: m
+// カメラの相対高さ（プレイヤー位置に対するオフセット）
+// ここを上げてプレイヤー視点をやや高めにする
+export const CAMERA_HEIGHT = 1.0; // 単位: m

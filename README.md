@@ -18,6 +18,9 @@ root/
 │ │ ├── page.tsx # ゲームエントリーポイント
 │ │ └── layout.tsx # 全体レイアウト
 │ ├── components/ # Reactコンポーネント
+│ │ ├── characters/ # キャラ用フォルダ
+│ │ ├── levels/ # ステージ・背景用フォルダ
+│ │ └── weapons/ # 武器用
 │ │ ├── canvas/ # 【3D世界】R3Fコンポーネント (Physics, Mesh)
 │ │ │ ├── Player/ # 自機制御、カメラ
 │ │ │ ├── Level/ # マップ、壁、床、環境光

@@ -8,9 +8,10 @@ import {
   MOUSE_SENSITIVITY,
   GROUNDED_RAY_DISTANCE,
   CAMERA_HEIGHT,
+  PLAYER_HALF_HEIGHT,
 } from '../../../constants/player';
-import { PLAYER_HALF_HEIGHT } from '../../../constants/player';
 import * as THREE from 'three';
+import { Model as PlayerModel } from '../../models/characters/Player';
 
 export default function Player() {
   const playerRef = useRef<RapierRigidBody>(null);
@@ -95,7 +96,8 @@ export default function Player() {
     prevJumpRef.current = keys.jump;
 
     // カメラの位置と回転を更新
-    camera.position.set(position.x, position.y + CAMERA_HEIGHT, position.z);
+    // カメラはプレイヤー中心 + 半高 + 任意のオフセットに配置する
+    camera.position.set(position.x, position.y + PLAYER_HALF_HEIGHT + CAMERA_HEIGHT, position.z);
     camera.rotation.set(rotationRef.current.pitch, rotationRef.current.yaw, 0);
   });
 
@@ -104,14 +106,14 @@ export default function Player() {
       ref={playerRef}
       colliders="ball"
       mass={1}
-      position={[0, 3, 0]}
-      enabledRotations={[false, false, false]} // 回転を無効化(カプセル型の挙動)
+      position={[0, 5, 0]}
+      enabledRotations={[false, false, false]}
       linearDamping={0.5}
     >
-      <mesh castShadow>
-        <capsuleGeometry args={[0.5, 1]} />
-        <meshStandardMaterial color="#4a90e2" transparent opacity={0} />
-      </mesh>
+      {/* モデルは縮小して表示。コライダー中心に合わせて位置を調整 */}
+      <group position={[0, -PLAYER_HALF_HEIGHT * (1 / 3), 0]} scale={[1 / 3, 1 / 3, 1 / 3]}>
+        <PlayerModel />
+      </group>
     </RigidBody>
   );
 }
