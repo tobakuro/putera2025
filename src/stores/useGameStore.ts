@@ -39,7 +39,7 @@ const INITIAL_STATE = {
   reserveAmmo: 90,
 };
 
-export const useGameStore = create<State>((set, get) => ({
+export const useGameStore = create<State>((set) => ({
   ...INITIAL_STATE,
 
   // ゲーム状態

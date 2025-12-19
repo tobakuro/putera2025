@@ -2,7 +2,13 @@ import { useRef, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { RigidBody, RapierRigidBody } from '@react-three/rapier';
 import { useKeyboard } from '../../../hooks/useKeyboard';
-import { MOVE_SPEED, JUMP_FORCE, SENSITIVITY, GROUNDED_EPS, CAMERA_HEIGHT } from '../../../constants/player';
+import {
+  MOVE_SPEED,
+  JUMP_FORCE,
+  SENSITIVITY,
+  GROUNDED_EPS,
+  CAMERA_HEIGHT,
+} from '../../../constants/player';
 import * as THREE from 'three';
 
 export default function Player() {
@@ -47,7 +53,7 @@ export default function Player() {
       dom.removeEventListener('click', handleClick);
       dom.removeEventListener('mousemove', handleMouseMove);
     };
-  }, []);
+  }, [gl.domElement]);
 
   // 毎フレームの更新
   useFrame(() => {
