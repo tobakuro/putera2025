@@ -22,51 +22,23 @@ export function useKeyboard() {
   });
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      switch (e.code) {
-        case 'KeyW':
-          setKeys((prev) => ({ ...prev, forward: true }));
-          break;
-        case 'KeyS':
-          setKeys((prev) => ({ ...prev, backward: true }));
-          break;
-        case 'KeyA':
-          setKeys((prev) => ({ ...prev, left: true }));
-          break;
-        case 'KeyD':
-          setKeys((prev) => ({ ...prev, right: true }));
-          break;
-        case 'Space':
-          setKeys((prev) => ({ ...prev, jump: true }));
-          break;
-        case 'KeyR':
-          setKeys((prev) => ({ ...prev, reload: true }));
-          break;
-      }
+    const keyMap: Record<string, keyof KeyboardState> = {
+      KeyW: 'forward',
+      KeyS: 'backward',
+      KeyA: 'left',
+      KeyD: 'right',
+      Space: 'jump',
+      KeyR: 'reload',
     };
 
-    const handleKeyUp = (e: KeyboardEvent) => {
-      switch (e.code) {
-        case 'KeyW':
-          setKeys((prev) => ({ ...prev, forward: false }));
-          break;
-        case 'KeyS':
-          setKeys((prev) => ({ ...prev, backward: false }));
-          break;
-        case 'KeyA':
-          setKeys((prev) => ({ ...prev, left: false }));
-          break;
-        case 'KeyD':
-          setKeys((prev) => ({ ...prev, right: false }));
-          break;
-        case 'Space':
-          setKeys((prev) => ({ ...prev, jump: false }));
-          break;
-        case 'KeyR':
-          setKeys((prev) => ({ ...prev, reload: false }));
-          break;
-      }
+    const updateKey = (code: string, value: boolean) => {
+      const k = keyMap[code];
+      if (!k) return;
+      setKeys((prev) => ({ ...prev, [k]: value }));
     };
+
+    const handleKeyDown = (e: KeyboardEvent) => updateKey(e.code, true);
+    const handleKeyUp = (e: KeyboardEvent) => updateKey(e.code, false);
 
     const handleMouseDown = (e: MouseEvent) => {
       if (e.button === 0) {
