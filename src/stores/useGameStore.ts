@@ -51,10 +51,13 @@ export const useGameStore = create<State>((set, get) => ({
 
   // プレイヤーHP
   takeDamage: (damage) =>
-    set((s) => ({
-      playerHP: Math.max(0, s.playerHP - damage),
-      gameState: s.playerHP - damage <= 0 ? 'gameover' : s.gameState,
-    })),
+    set((s) => {
+      const newHP = Math.max(0, s.playerHP - damage);
+      return {
+        playerHP: newHP,
+        gameState: newHP <= 0 ? 'gameover' : s.gameState,
+      } as Partial<State>;
+    }),
   heal: (amount) =>
     set((s) => ({
       playerHP: Math.min(s.maxHP, s.playerHP + amount),
@@ -62,12 +65,15 @@ export const useGameStore = create<State>((set, get) => ({
 
   // 弾薬
   shoot: () => {
-    const { currentAmmo } = get();
-    if (currentAmmo > 0) {
-      set((s) => ({ currentAmmo: s.currentAmmo - 1 }));
-      return true;
-    }
-    return false;
+    let fired = false;
+    set((s) => {
+      if (s.currentAmmo > 0) {
+        fired = true;
+        return { currentAmmo: s.currentAmmo - 1 } as Partial<State>;
+      }
+      return {} as Partial<State>;
+    });
+    return fired;
   },
   reload: () =>
     set((s) => {
