@@ -5,8 +5,7 @@ import { useKeyboard } from '../../../hooks/useKeyboard';
 import {
   MOVE_SPEED,
   JUMP_FORCE,
-  SENSITIVITY,
-  GROUNDED_EPS,
+  MOUSE_SENSITIVITY,
   GROUNDED_RAY_DISTANCE,
   CAMERA_HEIGHT,
 } from '../../../constants/player';
@@ -39,8 +38,8 @@ export default function Player() {
     const handleMouseMove = (e: MouseEvent) => {
       // Canvas がポインタロックしている場合のみカメラ回転を反映
       if (document.pointerLockElement === dom) {
-        rotationRef.current.yaw -= e.movementX * SENSITIVITY;
-        rotationRef.current.pitch -= e.movementY * SENSITIVITY;
+        rotationRef.current.yaw -= e.movementX * MOUSE_SENSITIVITY;
+        rotationRef.current.pitch -= e.movementY * MOUSE_SENSITIVITY;
 
         // ピッチ制限(上下の視点制限)
         rotationRef.current.pitch = Math.max(
