@@ -74,12 +74,18 @@ export default function HUD() {
           <div style={{ textAlign: 'center' }}>
             <div>現在の目標: カギを集めろ</div>
             <div style={{ marginTop: 6 }}>
-              鍵: [{' '}
+              鍵: [
               <img
                 src="/textures/2D_UI/鍵＿所持状況確認.png"
                 alt="key"
-                style={{ height: 18, verticalAlign: 'middle', ...imgResponsive }}
-              />{' '}
+                style={{
+                  height: 18,
+                  verticalAlign: 'middle',
+                  marginLeft: 6,
+                  marginRight: 6,
+                  display: 'inline-block',
+                }}
+              />
               ] (0/1)
             </div>
           </div>
