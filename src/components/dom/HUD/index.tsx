@@ -1,8 +1,7 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import useGameStore from '../../../stores/useGameStore';
-import { useEffect, useState } from 'react';
 
 export default function HUD() {
   const playerHP = useGameStore((s) => s.playerHP);
@@ -18,7 +17,12 @@ export default function HUD() {
   useEffect(() => {
     let id: number | undefined;
     if (gameState === 'playing') {
+      // reset timer on new play session (defer to avoid synchronous setState in effect)
+      setTimeout(() => setSeconds(0), 0);
       id = window.setInterval(() => setSeconds((s) => s + 1), 1000);
+    } else {
+      // ensure timer is reset when not playing
+      setTimeout(() => setSeconds(0), 0);
     }
     return () => {
       if (id !== undefined) clearInterval(id);
@@ -28,6 +32,11 @@ export default function HUD() {
   const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
   const ss = String(seconds % 60).padStart(2, '0');
   const timeText = `${mm}:${ss}`;
+
+  // Safe HP calculations: guard against division by zero and invalid values
+  const hpPercent = maxHP > 0 ? Math.round((playerHP / maxHP) * 100) : 0;
+  const hpBlocks = Math.max(0, Math.min(12, Math.round((hpPercent / 100) * 12)));
+  const hpBar = '■'.repeat(hpBlocks);
 
   const containerStyle: React.CSSProperties = {
     position: 'fixed',
@@ -73,8 +82,7 @@ export default function HUD() {
             />
             <div>
               <div>
-                HP: {['■'.repeat(Math.round((playerHP / maxHP) * 12))]}{' '}
-                {Math.round((playerHP / maxHP) * 100)}%
+                HP: {hpBar} {hpPercent}%
               </div>
               <div style={{ marginTop: 6 }}>
                 <Image
@@ -159,14 +167,29 @@ export default function HUD() {
 
       {/* Bottom-right: setting / placeholder rotated tag */}
       <div style={{ position: 'absolute', right: 16, bottom: 24, transform: 'rotate(-20deg)' }}>
-        <div style={panelStyle as React.CSSProperties}>
-          <Image
-            src="/textures/2D_UI/設定＿なくてもいい（ゲーム中断）.png"
-            alt="settings"
-            width={36}
-            height={36}
-            style={{ height: 36, ...imgResponsive }}
-          />
+        <div style={panelStyle}>
+          <button
+            type="button"
+            aria-label="Open settings"
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              margin: 0,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Image
+              src="/textures/2D_UI/設定＿なくてもいい（ゲーム中断）.png"
+              alt="settings"
+              width={36}
+              height={36}
+              style={{ height: 36, ...imgResponsive }}
+            />
+          </button>
         </div>
       </div>
     </div>
