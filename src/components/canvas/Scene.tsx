@@ -2,7 +2,7 @@
 
 import { Canvas } from '@react-three/fiber';
 import { Physics, RigidBody } from '@react-three/rapier';
-import { OrbitControls } from '@react-three/drei';
+import Player from './Player';
 
 export default function Scene() {
   return (
@@ -19,6 +19,9 @@ export default function Scene() {
 
       {/* 物理世界 */}
       <Physics gravity={[0, -9.81, 0]}>
+        {/* プレイヤー */}
+        <Player />
+
         {/* 床 */}
         <RigidBody type="fixed" colliders="cuboid">
           <mesh position={[0, -0.5, 0]} receiveShadow>
@@ -35,9 +38,6 @@ export default function Scene() {
           </mesh>
         </RigidBody>
       </Physics>
-
-      {/* デバッグ用カメラコントロール */}
-      <OrbitControls />
     </Canvas>
   );
 }
