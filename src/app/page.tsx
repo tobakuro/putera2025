@@ -1,9 +1,6 @@
 import React from 'react';
+import Scene from '../components/canvas/Scene';
 
 export default function Page() {
-  return (
-    <main>
-      <h1>Game Entry</h1>
-    </main>
-  );
+  return <Scene />;
 }
