@@ -2,10 +2,16 @@ import { create } from 'zustand';
 
 export type GameState = 'menu' | 'playing' | 'paused' | 'gameover';
 
+export type StageId = 'stage0' | 'stage1';
+
 type State = {
   // ゲーム状態
   gameState: GameState;
   setGameState: (state: GameState) => void;
+
+  // ステージ選択
+  stageId: StageId;
+  setStageId: (stageId: StageId) => void;
 
   // スコア
   score: number;
@@ -31,6 +37,7 @@ type State = {
 
 const INITIAL_STATE = {
   gameState: 'menu' as GameState,
+  stageId: 'stage0' as StageId,
   score: 0,
   playerHP: 100,
   maxHP: 100,
@@ -44,6 +51,9 @@ export const useGameStore = create<State>((set) => ({
 
   // ゲーム状態
   setGameState: (gameState) => set({ gameState }),
+
+  // ステージ選択
+  setStageId: (stageId) => set({ stageId }),
 
   // スコア
   addScore: (n) => set((s) => ({ score: s.score + n })),

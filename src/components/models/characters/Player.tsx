@@ -5,21 +5,9 @@ Command: npx gltfjsx@6.5.3 public/models/3D/glb/hitogata/hitogata_move.glb -o sr
 
 import * as THREE from 'three';
 import React from 'react';
-import { useGraph, useFrame } from '@react-three/fiber';
+import { useGraph } from '@react-three/fiber';
 import { useGLTF, useAnimations } from '@react-three/drei';
-import { WALK_SPEED } from '../../../constants/player';
 import { GLTF, SkeletonUtils } from 'three-stdlib';
-
-// Minimal GroupProps shape to avoid relying on module-specific exported types.
-// Keeps common props used by react-three-fiber groups while remaining permissive.
-export type GroupProps = {
-  position?: THREE.Vector3 | [number, number, number] | number;
-  rotation?: THREE.Euler | [number, number, number];
-  scale?: THREE.Vector3 | [number, number, number] | number;
-  children?: React.ReactNode;
-  dispose?: unknown;
-  [key: string]: unknown;
-};
 
 type ActionName = 'アーマチュアアクション';
 
@@ -38,120 +26,17 @@ type GLTFResult = GLTF & {
   animations: GLTFAction[];
 };
 
-// Lightweight action type that includes optional fields present in some three.js versions
-type AnimationActionLike = THREE.AnimationAction & {
-  setEffectiveTimeScale?: (v: number) => void;
-  timeScale?: number;
-  time?: number;
-};
-
-export function Model(props: GroupProps & { play?: boolean; headPitch?: number }) {
-  const { play, headPitch, ...rest } = props;
+export function Model(props: JSX.IntrinsicElements['group']) {
+  // useRef must be initialized; allow null until mounted
   const group = React.useRef<THREE.Group | null>(null);
-  const { scene, animations } = useGLTF('/models/3D/glb/hitogata/hitogata_move.glb');
+  const { scene, animations } = useGLTF('/hitogata_move.glb');
   const clone = React.useMemo(() => SkeletonUtils.clone(scene), [scene]);
+  // useGraph returns a generic map; cast via unknown to satisfy TS for now
   const { nodes, materials } = useGraph(clone) as unknown as GLTFResult;
-  const { actions, mixer } = useAnimations(
-    animations,
-    group as unknown as React.RefObject<THREE.Object3D>
-  );
-  // playback speed multiplier is configured via constants
-  // Keep a ref to mixer so we don't mutate the hook return value directly (ESLint immutability rule)
-  const mixerRef = React.useRef<THREE.AnimationMixer | null>(null);
-  React.useEffect(() => {
-    mixerRef.current = (mixer as THREE.AnimationMixer) || null;
-  }, [mixer]);
-
-  // find a head bone from common names (try skinned mesh skeleton first)
-  const headRef = React.useRef<THREE.Object3D | null>(null);
-  React.useEffect(() => {
-    // check skeleton bones
-    try {
-      const bones = nodes.立方体002?.skeleton?.bones || [];
-      const candidates = ['Head', 'head', 'HeadTop', 'HeadTop_End', 'Neck', 'neck', '首', '頭'];
-      for (const b of bones) {
-        if (b && candidates.includes(b.name)) {
-          headRef.current = b;
-          return;
-        }
-      }
-    } catch {
-      // ignore
-    }
-    // fallback: search clone by name
-    const candidates = ['Head', 'head', 'HeadTop', 'HeadTop_End', 'Neck', 'neck', '首', '頭'];
-    for (const name of candidates) {
-      const found = clone.getObjectByName(name);
-      if (found) {
-        headRef.current = found;
-        break;
-      }
-    }
-  }, [clone, nodes]);
-
-  // control animations: keep a walk-like animation looping, but when `play` is false
-  // advance to the end and pause (by setting mixer.timeScale=0). When `play` becomes true,
-  // resume from start.
-  React.useEffect(() => {
-    if (!actions) return;
-    const entries = Object.entries(actions);
-    if (entries.length === 0) return;
-
-    const walkEntry =
-      entries.find(([k]) => /walk|歩|walkmotion|run|walk_cycle/i.test(k)) || entries[0];
-    const walkAction = walkEntry[1] as THREE.AnimationAction | undefined;
-    if (!walkAction) return;
-
-    try {
-      walkAction.setLoop(THREE.LoopRepeat, Infinity);
-    } catch {
-      // ignore
-    }
-
-    // If currently requested to play, ensure mixer runs and action plays from start
-    if (play) {
-      try {
-        if (mixerRef.current) mixerRef.current.timeScale = 1;
-      } catch {}
-      try {
-        walkAction.reset();
-        try {
-          // prefer official setter if available
-          const a = walkAction as AnimationActionLike;
-          if (typeof a.setEffectiveTimeScale === 'function') {
-            a.setEffectiveTimeScale!(WALK_SPEED);
-          } else {
-            // fallback
-            a.timeScale = WALK_SPEED;
-          }
-        } catch {}
-        walkAction.play();
-      } catch {}
-      return;
-    }
-
-    // If not playing: advance to the end of the clip and pause the mixer so the pose stays
-    try {
-      const dur = walkAction.getClip()?.duration || 0;
-      // clamp to a small offset before exact end to avoid numerical issues
-      walkAction.time = Math.max(0, dur - 0.01);
-    } catch {}
-    try {
-      if (mixerRef.current) mixerRef.current.timeScale = 0;
-    } catch {}
-  }, [actions, play, mixer]);
-
-  // per-frame head pitch follow
-  useFrame(() => {
-    if (headRef.current && typeof headPitch === 'number') {
-      const currentX = headRef.current.rotation.x;
-      const targetX = headPitch * 0.5; // half the camera pitch
-      headRef.current.rotation.x = THREE.MathUtils.lerp(currentX, targetX, 0.12);
-    }
-  });
-
+  // cast group ref to a looser Object3D ref for useAnimations
+  const { actions } = useAnimations(animations, group as React.RefObject<THREE.Object3D>);
   return (
-    <group ref={group} {...rest} dispose={null}>
+    <group ref={group} {...props} dispose={null}>
       <group name="Scene">
         <group name="アーマチュア">
           <primitive object={nodes.Root} />
@@ -160,8 +45,6 @@ export function Model(props: GroupProps & { play?: boolean; headPitch?: number }
             geometry={nodes.立方体002.geometry}
             material={materials.kuro}
             skeleton={nodes.立方体002.skeleton}
-            castShadow={false}
-            receiveShadow={false}
           />
         </group>
       </group>
@@ -169,4 +52,4 @@ export function Model(props: GroupProps & { play?: boolean; headPitch?: number }
   );
 }
 
-useGLTF.preload('/models/3D/glb/hitogata/hitogata_move.glb');
+useGLTF.preload('/hitogata_move.glb');
