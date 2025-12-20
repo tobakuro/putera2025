@@ -15,6 +15,7 @@ import { STAGE_SPAWN } from '../../../constants/stages';
 import * as THREE from 'three';
 import { Model as PlayerModel } from '../../models/characters/Player';
 import useGameStore from '../../../stores/useGameStore';
+import Weapon from '../Weapon/Weapon';
 
 export default function Player() {
   const playerRef = useRef<RapierRigidBody>(null);
@@ -177,8 +178,17 @@ export default function Player() {
         position={[0, -PLAYER_HALF_HEIGHT * (1 / 3), 0]}
         scale={[1 / 3, 1 / 3, 1 / 3]}
       >
-        <PlayerModel play={isMoving} headPitch={headPitchState} />
-      </group>
-    </RigidBody>
+        {/* モデルは縮小して表示。コライダー中心に合わせて位置を調整 */}
+        <group
+          ref={modelRef}
+          position={[0, -PLAYER_HALF_HEIGHT * (1 / 3), 0]}
+          scale={[1 / 3, 1 / 3, 1 / 3]}
+        >
+          <PlayerModel play={isMoving} headPitch={headPitchState} />
+        </group>
+      </RigidBody>
+
+      <Weapon playerRef={playerRef} isShooting={keys.shoot} cameraRotationRef={rotationRef} />
+    </>
   );
 }
