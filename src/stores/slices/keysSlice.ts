@@ -6,6 +6,12 @@ type SetStateType = StoreApi<State>['setState'];
 export const createKeysSlice = (set: SetStateType): Partial<State> => ({
   keysCollected: 0,
   totalKeys: 1,
+  lastKeySpawns: [],
+  setLastKeySpawns: (points: { x: number; y: number; z: number }[]) =>
+    set(() => ({ lastKeySpawns: points })),
+  lastHeartSpawns: [],
+  setLastHeartSpawns: (points: { x: number; y: number; z: number }[]) =>
+    set(() => ({ lastHeartSpawns: points })),
   setTotalKeys: (total: number) =>
     set((s: State) => ({
       totalKeys: Math.max(0, total),
