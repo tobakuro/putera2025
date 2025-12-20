@@ -17,6 +17,8 @@ import { Model as PlayerModel } from '../../models/characters/Player';
 import useGameStore from '../../../stores/useGameStore';
 import Weapon from '../Weapon/Weapon';
 
+// カメラモード: 'third' または 'first' は useGameStore に保存される
+
 export default function Player() {
   const playerRef = useRef<RapierRigidBody>(null);
   const { camera, gl, scene } = useThree();
@@ -70,6 +72,8 @@ export default function Player() {
   }, [isMoving]);
 
   const gameState = useGameStore((s) => s.gameState);
+  const cameraMode = useGameStore((s) => s.cameraMode);
+  const toggleCameraMode = useGameStore((s) => s.toggleCameraMode);
 
   // ポインターロックの設定
   useEffect(() => {
@@ -120,6 +124,18 @@ export default function Player() {
       document.removeEventListener('pointerlockchange', handlePointerLockChange);
     };
   }, [gl.domElement]);
+
+  // カメラモード切替キー (V) をハンドル
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'KeyV') {
+        // メニューやポーズ中でも切替可能にしておく
+        toggleCameraMode();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleCameraMode]);
 
   // リスポーン要求を監視してプレイヤーをスポーン地点へ戻す
   const respawnToken = useGameStore((s) => s.respawnToken);
@@ -183,9 +199,20 @@ export default function Player() {
     prevJumpRef.current = keys.jump;
 
     // カメラの位置と回転を更新
-    // カメラはプレイヤー中心 + 半高 + 任意のオフセットに配置し、プレイヤーの向きに合わせて後方に引く
-    const camOffset = new THREE.Vector3(0, PLAYER_HALF_HEIGHT + CAMERA_HEIGHT, -CAMERA_BACK_OFFSET);
-    camOffset.applyEuler(new THREE.Euler(0, rotationRef.current.yaw, 0));
+    // cameraMode に応じて一人称/三人称を切り替える
+    let camOffset: THREE.Vector3;
+    if (cameraMode === 'first') {
+      // 一人称: プレイヤーの頭位置にカメラを置く（後方オフセットなし）
+      camOffset = new THREE.Vector3(0, PLAYER_HALF_HEIGHT + CAMERA_HEIGHT, 0);
+      // モデルは見えないようにする（主に視界の邪魔を防ぐため）
+      if (modelRef.current) modelRef.current.visible = false;
+    } else {
+      // 三人称: 少し後方に下がった位置にカメラを置く
+      camOffset = new THREE.Vector3(0, PLAYER_HALF_HEIGHT + CAMERA_HEIGHT, -CAMERA_BACK_OFFSET);
+      camOffset.applyEuler(new THREE.Euler(0, rotationRef.current.yaw, 0));
+      if (modelRef.current) modelRef.current.visible = true;
+    }
+
     camera.position.set(
       position.x + camOffset.x,
       position.y + camOffset.y,

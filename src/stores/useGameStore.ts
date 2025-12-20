@@ -67,6 +67,10 @@ type State = {
   // リスポーン制御: トークンをインクリメントしてプレイヤーに通知
   respawnToken: number;
   requestRespawn: () => void;
+  // カメラモード: 'third' | 'first'
+  cameraMode: 'third' | 'first';
+  setCameraMode: (mode: 'third' | 'first') => void;
+  toggleCameraMode: () => void;
 };
 
 const INITIAL_STATE = {
@@ -83,6 +87,7 @@ const INITIAL_STATE = {
   enemies: [] as Enemy[],
   itemResetTrigger: 0,
   playerPosition: { x: 0, y: 0, z: 0 },
+  cameraMode: 'third' as 'third' | 'first',
 };
 
 // デフォルトステージID（型安全に参照するため）
@@ -190,6 +195,12 @@ export const useGameStore = create<State>((set) => ({
   respawnToken: 0,
   requestRespawn: () =>
     set((s) => ({ respawnToken: s.respawnToken + 1, playerHP: s.maxHP }) as Partial<State>),
+
+  // カメラモード制御
+  cameraMode: 'third',
+  setCameraMode: (mode) => set({ cameraMode: mode }),
+  toggleCameraMode: () =>
+    set((s) => ({ cameraMode: s.cameraMode === 'third' ? 'first' : 'third' }) as Partial<State>),
 }));
 
 export default useGameStore;
