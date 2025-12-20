@@ -9,7 +9,7 @@ import type { EnemyType } from '../constants/enemies';
 
 export type GameState = 'menu' | 'playing' | 'paused' | 'gameover';
 
-export type StageId = 'stage0' | 'stage1';
+export type StageId = 'stage0' | 'stage1' | 'stageL';
 
 // 敵の個体情報
 export interface Enemy {

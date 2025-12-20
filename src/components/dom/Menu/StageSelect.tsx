@@ -141,6 +141,34 @@ export default function StageSelect({ localStage, setLocalStage, onNext, onBack 
             <div style={{ color: 'white', fontWeight: 700 }}>バグ</div>
           </div>
         </div>
+
+        {/* Stage L - メトロポリス */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          <button
+            type="button"
+            onClick={() => setLocalStage('stageL')}
+            style={{
+              width: 260,
+              height: 160,
+              padding: 0,
+              borderRadius: 10,
+              overflow: 'hidden',
+              position: 'relative',
+              border:
+                localStage === 'stageL' ? '3px solid #10b981' : '2px solid rgba(255,255,255,0.12)',
+              background: 'transparent',
+              cursor: 'pointer',
+            }}
+          >
+            <Image
+              src="/textures/2D_UI/metropolis.png"
+              alt="stage-metropolis"
+              fill
+              style={{ objectFit: 'cover', display: 'block' }}
+            />
+          </button>
+          <div style={{ color: 'white', fontWeight: 700 }}>メトロポリス</div>
+        </div>
       </div>
 
       <button
