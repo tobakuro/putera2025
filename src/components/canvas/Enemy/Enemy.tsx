@@ -117,18 +117,18 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
       </group>
 
       {/* HPバーの表示（敵の上部） */}
-      <mesh position={[0, 2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[1, 0.1]} />
-        <meshBasicMaterial color="#ff0000" transparent opacity={0.7} />
-      </mesh>
-      <mesh
-        position={[0, 1.5, 0.01]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        scale={[enemy.health / stats.maxHealth, 1, 1]}
-      >
-        <planeGeometry args={[1, 0.1]} />
-        <meshBasicMaterial color="#00ff00" transparent opacity={0.9} />
-      </mesh>
+      <group position={[0, 2.5, 0]}>
+        {/* 背景（赤） */}
+        <mesh position={[0, 0, 0]}>
+          <planeGeometry args={[1, 0.1]} />
+          <meshBasicMaterial color="#ff0000" transparent opacity={0.7} side={2} />
+        </mesh>
+        {/* HP（緑） */}
+        <mesh position={[-0.5 * (1 - enemy.health / stats.maxHealth), 0, 0.01]}>
+          <planeGeometry args={[enemy.health / stats.maxHealth, 0.1]} />
+          <meshBasicMaterial color="#00ff00" transparent opacity={0.9} side={2} />
+        </mesh>
+      </group>
     </RigidBody>
   );
 }
