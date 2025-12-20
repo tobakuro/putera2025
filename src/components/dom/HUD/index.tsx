@@ -10,6 +10,7 @@ export default function HUD() {
   const reserveAmmo = useGameStore((s) => s.reserveAmmo);
   const keysCollected = useGameStore((s) => s.keysCollected);
   const totalKeys = useGameStore((s) => s.totalKeys);
+  const playerPosition = useGameStore((s) => s.playerPosition);
 
   // simple time placeholder (could be wired to store or game timer)
   const gameState = useGameStore((s) => s.gameState);
@@ -72,6 +73,9 @@ export default function HUD() {
   const mm = String(Math.floor(displaySeconds / 60)).padStart(2, '0');
   const ss = String(displaySeconds % 60).padStart(2, '0');
   const timeText = `${mm}:${ss}`;
+
+  const pos = playerPosition ?? { x: 0, y: 0, z: 0 };
+  const posText = `${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)}`;
 
   // Safe HP calculations: guard against division by zero and invalid values
   const hpPercent = maxHP > 0 ? Math.round((playerHP / maxHP) * 100) : 0;
@@ -163,6 +167,7 @@ export default function HUD() {
                 />
                 <span>{timeText}</span>
               </div>
+              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>座標: ({posText})</div>
             </div>
           </div>
         </div>

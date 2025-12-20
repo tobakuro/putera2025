@@ -24,6 +24,10 @@ type State = {
   takeDamage: (damage: number) => void;
   heal: (amount: number) => void;
 
+  // プレイヤー座標
+  playerPosition: { x: number; y: number; z: number };
+  setPlayerPosition: (position: { x: number; y: number; z: number }) => void;
+
   // 弾薬
   currentAmmo: number;
   maxAmmo: number;
@@ -37,6 +41,10 @@ type State = {
   setTotalKeys: (total: number) => void;
   collectKey: () => void;
   resetKeys: () => void;
+
+  // アイテムリセットトリガー（リセットスポット用）
+  itemResetTrigger: number;
+  triggerItemReset: () => void;
 
   // ゲームリセット
   resetGame: (preserveStage?: boolean) => void;
@@ -53,6 +61,8 @@ const INITIAL_STATE = {
   reserveAmmo: 90,
   keysCollected: 0,
   totalKeys: 1,
+  itemResetTrigger: 0,
+  playerPosition: { x: 0, y: 0, z: 0 },
 };
 
 // デフォルトステージID（型安全に参照するため）
@@ -84,7 +94,8 @@ export const useGameStore = create<State>((set) => ({
     set((s) => ({
       playerHP: Math.min(s.maxHP, s.playerHP + amount),
     })),
-
+  // プレイヤー座標
+  setPlayerPosition: (position) => set({ playerPosition: position }),
   // 弾薬
   shoot: () => {
     let fired = false;
@@ -121,6 +132,13 @@ export const useGameStore = create<State>((set) => ({
       keysCollected: Math.min(s.totalKeys, s.keysCollected + 1),
     })),
   resetKeys: () => set({ keysCollected: 0 }),
+
+  // アイテムリセットトリガー
+  triggerItemReset: () =>
+    set((s) => ({
+      itemResetTrigger: s.itemResetTrigger + 1,
+      keysCollected: 0, // 鍵の入手数もリセット
+    })),
 
   // ゲームリセット
   // preserveStage=true の場合は現在の stageId を保持してリセットする

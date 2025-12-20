@@ -49,6 +49,7 @@ export default function KeySpawner({ count = DEFAULT_KEY_COUNT }: KeySpawnerProp
   const setTotalKeys = useGameStore((s) => s.setTotalKeys);
   const resetKeys = useGameStore((s) => s.resetKeys);
   const gameState = useGameStore((s) => s.gameState);
+  const itemResetTrigger = useGameStore((s) => s.itemResetTrigger);
 
   const [keys, setKeys] = useState<KeySpawn[]>(() => createSpawnSet(count));
 
@@ -61,7 +62,7 @@ export default function KeySpawner({ count = DEFAULT_KEY_COUNT }: KeySpawnerProp
       resetKeys();
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [count, gameState, resetKeys]);
+  }, [count, gameState, resetKeys, itemResetTrigger]);
 
   useEffect(() => {
     setTotalKeys(keys.length);

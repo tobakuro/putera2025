@@ -6,6 +6,7 @@ import Player from './Player';
 import Level from './Level';
 import KeySpawner from './KeySpawner';
 import HeartSpawner from './HeartSpawner';
+import ResetSpot from './ResetSpot';
 
 export default function Scene() {
   return (
@@ -31,7 +32,7 @@ export default function Scene() {
 
         <KeySpawner />
         <HeartSpawner />
-
+        <ResetSpot position={[17.5, 0.1, 0]} />
         {/* テスト用の立方体 */}
         <RigidBody colliders="cuboid">
           <mesh position={[0, 5, 0]} castShadow>
