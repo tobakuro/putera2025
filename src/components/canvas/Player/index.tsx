@@ -15,8 +15,7 @@ import { STAGE_SPAWN } from '../../../constants/stages';
 import * as THREE from 'three';
 import { Model as PlayerModel } from '../../models/characters/Player';
 import useGameStore from '../../../stores/useGameStore';
-// gameState を参照してポーズ時には入力/更新を止める
-// （useKeyboard 側でも入力を無効化していますが、ここでも早期returnで確実に停止）
+import Weapon from '../Weapon/Weapon';
 
 export default function Player() {
   const playerRef = useRef<RapierRigidBody>(null);
@@ -202,23 +201,27 @@ export default function Player() {
   });
 
   return (
-    <RigidBody
-      name="player"
-      ref={playerRef}
-      colliders="ball"
-      mass={1}
-      position={spawn}
-      enabledRotations={[false, false, false]}
-      linearDamping={0.5}
-    >
-      {/* モデルは縮小して表示。コライダー中心に合わせて位置を調整 */}
-      <group
-        ref={modelRef}
-        position={[0, -PLAYER_HALF_HEIGHT * (1 / 3), 0]}
-        scale={[1 / 3, 1 / 3, 1 / 3]}
+    <>
+      <RigidBody
+        name="player"
+        ref={playerRef}
+        colliders="ball"
+        mass={1}
+        position={spawn}
+        enabledRotations={[false, false, false]}
+        linearDamping={0.5}
       >
-        <PlayerModel play={isMoving} headPitch={headPitchState} />
-      </group>
-    </RigidBody>
+        {/* モデルは縮小して表示。コライダー中心に合わせて位置を調整 */}
+        <group
+          ref={modelRef}
+          position={[0, -PLAYER_HALF_HEIGHT * (1 / 3), 0]}
+          scale={[1 / 3, 1 / 3, 1 / 3]}
+        >
+          <PlayerModel play={isMoving} headPitch={headPitchState} />
+        </group>
+      </RigidBody>
+
+      <Weapon playerRef={playerRef} isShooting={keys.shoot} cameraRotationRef={rotationRef} />
+    </>
   );
 }
