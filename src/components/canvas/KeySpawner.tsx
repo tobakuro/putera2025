@@ -7,16 +7,22 @@ import useGameStore from '../../stores/useGameStore';
 import { MAX_KEYS } from '../../constants/keys';
 
 const KEY_MODEL_PATH = '/models/3D/glb/key/key_move.glb';
-const KEY_SPAWN_POINTS: [number, number, number][] = [
-  [4, 1, -6],
-  [-8, 1, 12],
-  [10, 1, 20],
-  [-16, 1, 4],
-  [6, 1, 32],
-  [-18, 1, -10],
-  [14, 1, -18],
-  [22, 1, 8],
-];
+// stage-specific key spawn points
+const KEY_SPAWN_BY_STAGE: Record<string, [number, number, number][]> = {
+  stage0: [
+    [4, 1, -6],
+    [-8, 1, 12],
+    [10, 1, 20],
+  ],
+  stage1: [
+    [-16, 1, 4],
+    [6, 1, 32],
+    //[2.7,-0.5,-2.5],//決定
+    //[-5,-0.5,5],//決定
+    //[14, 1, -18],
+    [22, 1, 8],
+  ],
+};
 // default count can be overridden via prop; MAX_KEYS defines game-wide maximum
 
 function shuffle<T>(input: T[]): T[] {
@@ -28,9 +34,9 @@ function shuffle<T>(input: T[]): T[] {
   return arr;
 }
 
-function createSpawnSet(count: number) {
-  const clamped = Math.max(0, Math.min(count, KEY_SPAWN_POINTS.length));
-  return shuffle(KEY_SPAWN_POINTS)
+function createSpawnSet(count: number, spawnPoints: [number, number, number][]) {
+  const clamped = Math.max(0, Math.min(count, spawnPoints.length));
+  return shuffle(spawnPoints)
     .slice(0, clamped)
     .map((position, index) => ({
       id: `key-${index}-${position.join(',')}`,
@@ -53,15 +59,18 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
   const gameState = useGameStore((s) => s.gameState);
   const itemResetTrigger = useGameStore((s) => s.itemResetTrigger);
   const prevGameStateRef = useRef(gameState);
+  const stageId = useGameStore((s) => s.stageId);
+  const spawnPoints = KEY_SPAWN_BY_STAGE[stageId] ?? KEY_SPAWN_BY_STAGE['stage0'];
 
   // Ensure we don't spawn more keys than allowed by MAX_KEYS when
   // combined with the player's currently held keys.
   const effectiveSpawnCount = Math.max(
     0,
-    Math.min(count, MAX_KEYS - keysCollected, KEY_SPAWN_POINTS.length)
+    Math.min(count, MAX_KEYS - keysCollected, spawnPoints.length)
   );
-
-  const [keys, setKeys] = useState<KeySpawn[]>(() => createSpawnSet(effectiveSpawnCount));
+  const [keys, setKeys] = useState<KeySpawn[]>(() =>
+    createSpawnSet(effectiveSpawnCount, spawnPoints)
+  );
 
   useEffect(() => {
     if (gameState !== 'playing') {
@@ -71,11 +80,12 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
     // Only reset keys when entering playing from menu or gameover (new session)
     const prev = prevGameStateRef.current;
     const timer = window.setTimeout(() => {
+      const pts = KEY_SPAWN_BY_STAGE[stageId] ?? KEY_SPAWN_BY_STAGE['stage0'];
       const spawnCount = Math.max(
         0,
-        Math.min(count, MAX_KEYS - useGameStore.getState().keysCollected, KEY_SPAWN_POINTS.length)
+        Math.min(count, MAX_KEYS - useGameStore.getState().keysCollected, pts.length)
       );
-      setKeys(createSpawnSet(spawnCount));
+      setKeys(createSpawnSet(spawnCount, pts));
       if (prev === 'menu' || prev === 'gameover') {
         resetKeys();
       }

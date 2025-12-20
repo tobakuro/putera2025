@@ -7,16 +7,21 @@ import useGameStore from '../../stores/useGameStore';
 
 const HEART_MODEL_PATH = '/models/3D/glb/ha-to/kaihuku_ha-to_move.glb';
 
-const HEART_SPAWN_POINTS: [number, number, number][] = [
-  [2, 1, 6],
-  [-12, 1, 14],
-  [8, 1, -14],
-  [-20, 1, 2],
-  [18, 1, 24],
-  [-6, 1, 28],
-  [20, 1, -12],
-  [-22, 1, -16],
-];
+// stage-specific spawn points (can be adjusted per stage)
+const HEART_SPAWN_BY_STAGE: Record<string, [number, number, number][]> = {
+  stage0: [
+    [2, 1, 6],
+    [-12, 1, 14],
+    [8, 1, -14],
+    [-20, 1, 2],
+  ],
+  stage1: [
+    [18, 1, 24],
+    [-6, 1, 28],
+    [20, 1, -12],
+    [-22, 1, -16],
+  ],
+};
 const DEFAULT_HEART_COUNT = 2;
 const HEAL_AMOUNT = 25;
 
@@ -29,9 +34,9 @@ function shuffle<T>(input: T[]): T[] {
   return arr;
 }
 
-function createSpawnSet(count: number) {
-  const clamped = Math.max(0, Math.min(count, HEART_SPAWN_POINTS.length));
-  return shuffle(HEART_SPAWN_POINTS)
+function createSpawnSet(count: number, spawnPoints: [number, number, number][]) {
+  const clamped = Math.max(0, Math.min(count, spawnPoints.length));
+  return shuffle(spawnPoints)
     .slice(0, clamped)
     .map((position, index) => ({
       id: `heart-${index}-${position.join(',')}`,
@@ -48,14 +53,17 @@ type HeartSpawnerProps = {
 
 export default function HeartSpawner({ count = DEFAULT_HEART_COUNT }: HeartSpawnerProps) {
   const heal = useGameStore((s) => s.heal);
+  const stageId = useGameStore((s) => s.stageId);
   const gameState = useGameStore((s) => s.gameState);
   const itemResetTrigger = useGameStore((s) => s.itemResetTrigger);
-  const [hearts, setHearts] = useState<HeartSpawn[]>(() => createSpawnSet(count));
+  const spawnPoints = HEART_SPAWN_BY_STAGE[stageId] ?? HEART_SPAWN_BY_STAGE['stage0'];
+  const [hearts, setHearts] = useState<HeartSpawn[]>(() => createSpawnSet(count, spawnPoints));
 
   useEffect(() => {
     if (gameState !== 'playing') return;
     const timer = window.setTimeout(() => {
-      setHearts(createSpawnSet(count));
+      const pts = HEART_SPAWN_BY_STAGE[stageId] ?? HEART_SPAWN_BY_STAGE['stage0'];
+      setHearts(createSpawnSet(count, pts));
     }, 0);
     return () => window.clearTimeout(timer);
   }, [count, gameState, itemResetTrigger]);
