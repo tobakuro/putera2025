@@ -11,13 +11,18 @@ import {
   CAMERA_BACK_OFFSET,
   PLAYER_HALF_HEIGHT,
 } from '../../../constants/player';
+import { STAGE_SPAWN } from '../../../constants/stages';
 import * as THREE from 'three';
 import { Model as PlayerModel } from '../../models/characters/Player';
+import useGameStore from '../../../stores/useGameStore';
 
 export default function Player() {
   const playerRef = useRef<RapierRigidBody>(null);
   const { camera, gl, scene } = useThree();
   const keys = useKeyboard();
+  const stageId = useGameStore((s) => s.stageId);
+
+  const spawn = STAGE_SPAWN[stageId] ?? ([0, 5, 0] as const);
 
   // カメラの回転角度
   const rotationRef = useRef({ yaw: 0, pitch: 0 });
@@ -129,7 +134,7 @@ export default function Player() {
       ref={playerRef}
       colliders="ball"
       mass={1}
-      position={[0, 5, 0]}
+      position={spawn}
       enabledRotations={[false, false, false]}
       linearDamping={0.5}
     >
