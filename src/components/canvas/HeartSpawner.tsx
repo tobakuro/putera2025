@@ -153,6 +153,8 @@ function HeartInstance({ data, onCollect }: HeartInstanceProps) {
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame(({ clock }) => {
+    // ゲームが再生中でなければアニメーション停止
+    if (useGameStore.getState().gameState !== 'playing') return;
     if (!groupRef.current || collected) return;
     const t = clock.getElapsedTime();
     groupRef.current.rotation.y = t * 0.7;

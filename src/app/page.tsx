@@ -3,6 +3,7 @@
 import React from 'react';
 import Scene from '../components/canvas/Scene';
 import Menu from '../components/dom/Menu';
+import GameOver from '../components/dom/GameOver';
 import HUD from '../components/dom/HUD';
 import PauseOverlay from '../components/dom/PauseOverlay';
 import useGameStore from '../stores/useGameStore';
@@ -13,8 +14,14 @@ export default function Page() {
   // メニュー状態ならメニューを表示。Startで gameState を 'playing' にする。
   if (gameState === 'menu') return <Menu />;
 
-  // ゲームオーバー状態ならメニューに戻す（GameOverコンポーネントの代わり）
-  if (gameState === 'gameover') return <Menu />;
+  // ゲームオーバー状態なら GameOver オーバーレイを表示
+  if (gameState === 'gameover')
+    return (
+      <>
+        <Scene />
+        <GameOver />
+      </>
+    );
 
   return (
     <>

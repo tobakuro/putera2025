@@ -33,9 +33,11 @@ export default function Weapon({ playerRef, isShooting, cameraRotationRef }: Wea
   const bullets = useRef<BulletData[]>([]);
   const lastShotTime = useRef(0);
   const prevShootingRef = useRef(false);
+  const gameState = useGameStore((s) => s.gameState);
 
   // 弾が消える処理(発射されてから消えるまでの時間は定数をいじってね)
   useFrame((state) => {
+    if (gameState !== 'playing') return;
     const now = state.clock.getElapsedTime();
 
     bullets.current = bullets.current.filter((bullet) => {
@@ -112,6 +114,7 @@ function Bullet({ startPosition, direction }: BulletProps) {
 
   // RigidBodyが準備できていることを保証するためにuseFrame内で速度を適用
   useFrame(() => {
+    if (useGameStore.getState().gameState !== 'playing') return;
     if (!bulletRef.current || hasHit) return;
 
     // 一度だけ速度を適用

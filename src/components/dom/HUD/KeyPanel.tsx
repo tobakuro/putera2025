@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import Image from 'next/image';
+// Use native img to avoid next/image optimization issues for local UI assets
 import useGameStore from '../../../stores/useGameStore';
 
 export default function KeyPanel() {
@@ -43,7 +43,22 @@ export default function KeyPanel() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Image src="/textures/2D_UI/鍵＿所持状況確認.png" alt="key" width={18} height={18} />
+          <div
+            id="placeholder-key-icon"
+            style={{
+              width: 24,
+              height: 24,
+              background: '#ddd',
+              borderRadius: 4,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#666',
+              fontSize: 10,
+            }}
+          >
+            Key
+          </div>
           <div>
             <div style={{ fontSize: 14 }}>
               鍵: {keysCollected} / {totalKeys}
