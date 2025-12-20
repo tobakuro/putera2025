@@ -45,6 +45,10 @@ export const createGameSlice = (set: SetStateType): Partial<State> => ({
           enemies: [],
           itemResetTrigger: 0,
           playerPosition: { x: 0, y: 0, z: 0 },
+          lastKeySpawns: [],
+          lastHeartSpawns: [],
+          respawnToken: 0,
+          cameraMode: 'third',
         }) as Partial<State>
     );
   },
