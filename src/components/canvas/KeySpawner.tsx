@@ -51,6 +51,7 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
   const resetKeys = useGameStore((s) => s.resetKeys);
   const keysCollected = useGameStore((s) => s.keysCollected);
   const gameState = useGameStore((s) => s.gameState);
+  const itemResetTrigger = useGameStore((s) => s.itemResetTrigger);
   const prevGameStateRef = useRef(gameState);
 
   // Ensure we don't spawn more keys than allowed by MAX_KEYS when
@@ -81,7 +82,7 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
     }, 0);
     prevGameStateRef.current = gameState;
     return () => window.clearTimeout(timer);
-  }, [count, gameState, resetKeys]);
+  }, [count, gameState, resetKeys, itemResetTrigger]);
 
   useEffect(() => {
     // totalKeys represents the total remaining in the level = on-map + held

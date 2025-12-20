@@ -23,7 +23,9 @@ export default function Player() {
   const keys = useKeyboard();
   const stageId = useGameStore((s) => s.stageId);
 
+  const setPlayerPosition = useGameStore((s) => s.setPlayerPosition);
   const spawn = useMemo(() => STAGE_SPAWN[stageId] ?? ([0, 5, 0] as const), [stageId]);
+
 
   // カメラの回転角度
   const rotationRef = useRef({ yaw: 0, pitch: 0 });
@@ -191,7 +193,12 @@ export default function Player() {
       position.z + camOffset.z
     );
     camera.rotation.set(rotationRef.current.pitch, rotationRef.current.yaw, 0);
-
+    // ゲームストアに座標を更新
+    setPlayerPosition({
+      x: Math.round(position.x * 10) / 10, // 小数点1桁に丸める
+      y: Math.round(position.y * 10) / 10,
+      z: Math.round(position.z * 10) / 10,
+    });
     // モデルの回転をカメラのヨーに合わせる（滑らかに追従）
     if (modelRef.current) {
       const currentY = modelRef.current.rotation.y;
