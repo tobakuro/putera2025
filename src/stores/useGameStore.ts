@@ -2,10 +2,16 @@ import { create } from 'zustand';
 
 export type GameState = 'menu' | 'playing' | 'paused' | 'gameover';
 
+export type StageId = 'stage0' | 'stage1';
+
 type State = {
   // ゲーム状態
   gameState: GameState;
   setGameState: (state: GameState) => void;
+
+  // ステージ選択
+  stageId: StageId;
+  setStageId: (stageId: StageId) => void;
 
   // スコア
   score: number;
@@ -33,11 +39,12 @@ type State = {
   resetKeys: () => void;
 
   // ゲームリセット
-  resetGame: () => void;
+  resetGame: (preserveStage?: boolean) => void;
 };
 
 const INITIAL_STATE = {
   gameState: 'menu' as GameState,
+  stageId: 'stage0' as StageId,
   score: 0,
   playerHP: 100,
   maxHP: 100,
@@ -48,11 +55,17 @@ const INITIAL_STATE = {
   totalKeys: 1,
 };
 
+// デフォルトステージID（型安全に参照するため）
+const DEFAULT_STAGE_ID: StageId = 'stage0';
+
 export const useGameStore = create<State>((set) => ({
   ...INITIAL_STATE,
 
   // ゲーム状態
   setGameState: (gameState) => set({ gameState }),
+
+  // ステージ選択
+  setStageId: (stageId) => set({ stageId }),
 
   // スコア
   addScore: (n) => set((s) => ({ score: s.score + n })),
@@ -110,7 +123,12 @@ export const useGameStore = create<State>((set) => ({
   resetKeys: () => set({ keysCollected: 0 }),
 
   // ゲームリセット
-  resetGame: () => set(INITIAL_STATE),
+  // preserveStage=true の場合は現在の stageId を保持してリセットする
+  resetGame: (preserveStage = false) =>
+    set((s) => {
+      const stageId = preserveStage ? s.stageId : DEFAULT_STAGE_ID;
+      return { ...INITIAL_STATE, stageId } as State;
+    }),
 }));
 
 export default useGameStore;

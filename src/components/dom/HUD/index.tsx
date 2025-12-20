@@ -13,6 +13,7 @@ export default function HUD() {
 
   // simple time placeholder (could be wired to store or game timer)
   const gameState = useGameStore((s) => s.gameState);
+  const stageId = useGameStore((s) => s.stageId);
   const [seconds, setSeconds] = useState(0);
 
   // start/stop timer when gameState becomes 'playing'
@@ -100,6 +101,9 @@ export default function HUD() {
       {/* Top-left: HP + Time */}
       <div style={{ position: 'absolute', left: 16, top: 16 }}>
         <div style={panelStyle}>
+          {gameState === 'playing' && (
+            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 6 }}>stage: {stageId}</div>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Image
               src="/textures/2D_UI/ライフ＿プレイヤー体力.png"
