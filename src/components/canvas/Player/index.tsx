@@ -13,6 +13,7 @@ import {
 } from '../../../constants/player';
 import * as THREE from 'three';
 import { Model as PlayerModel } from '../../models/characters/Player';
+import Weapon from '../Weapon/Weapon';
 
 export default function Player() {
   const playerRef = useRef<RapierRigidBody>(null);
@@ -125,22 +126,26 @@ export default function Player() {
   });
 
   return (
-    <RigidBody
-      ref={playerRef}
-      colliders="ball"
-      mass={1}
-      position={[0, 5, 0]}
-      enabledRotations={[false, false, false]}
-      linearDamping={0.5}
-    >
-      {/* モデルは縮小して表示。コライダー中心に合わせて位置を調整 */}
-      <group
-        ref={modelRef}
-        position={[0, -PLAYER_HALF_HEIGHT * (1 / 3), 0]}
-        scale={[1 / 3, 1 / 3, 1 / 3]}
+    <>
+      <RigidBody
+        ref={playerRef}
+        colliders="ball"
+        mass={1}
+        position={[0, 5, 0]}
+        enabledRotations={[false, false, false]}
+        linearDamping={0.5}
       >
-        <PlayerModel play={isMoving} headPitch={headPitchState} />
-      </group>
-    </RigidBody>
+        {/* モデルは縮小して表示。コライダー中心に合わせて位置を調整 */}
+        <group
+          ref={modelRef}
+          position={[0, -PLAYER_HALF_HEIGHT * (1 / 3), 0]}
+          scale={[1 / 3, 1 / 3, 1 / 3]}
+        >
+          <PlayerModel play={isMoving} headPitch={headPitchState} />
+        </group>
+      </RigidBody>
+
+      <Weapon playerRef={playerRef} isShooting={keys.shoot} cameraRotationRef={rotationRef} />
+    </>
   );
 }
