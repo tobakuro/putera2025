@@ -4,17 +4,20 @@ import { RigidBody, RapierRigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import {
   PISTOL_FIRE_RATE,
+  PISTOL_DAMAGE,
   BULLET_SPEED,
   BULLET_LIFETIME,
   BULLET_RADIUS,
 } from '../../../constants/weapons';
+import useGameStore from '../../../stores/useGameStore';
+import { ENEMY_STATS } from '../../../constants/enemies';
 
 type BulletData = {
   id: number;
-  ref: React.RefObject<RapierRigidBody | null>;
   createdAt: number;
   startPosition: THREE.Vector3;
   direction: THREE.Vector3;
+  hasHit: boolean; // 弾が何かに当たったかのフラグ
 };
 
 type WeaponProps = {
@@ -63,15 +66,14 @@ export default function Weapon({ playerRef, isShooting, cameraRotationRef }: Wea
     direction.normalize();
 
     // 弾の初期位置はカメラ位置から少し前方にしてます
-    const bulletRef = React.createRef<RapierRigidBody | null>();
     const id = bulletIdCounter++;
 
     bullets.current.push({
       id,
-      ref: bulletRef,
       createdAt: currentTime,
       startPosition: camera.position.clone(),
       direction: direction.clone(),
+      hasHit: false,
     });
   };
 
@@ -80,7 +82,7 @@ export default function Weapon({ playerRef, isShooting, cameraRotationRef }: Wea
       {bullets.current.map((bullet) => (
         <Bullet
           key={bullet.id}
-          bulletRef={bullet.ref}
+          bulletData={bullet}
           startPosition={bullet.startPosition}
           direction={bullet.direction}
         />
@@ -90,17 +92,22 @@ export default function Weapon({ playerRef, isShooting, cameraRotationRef }: Wea
 }
 
 type BulletProps = {
-  bulletRef: React.RefObject<RapierRigidBody | null>;
+  bulletData: BulletData;
   startPosition: THREE.Vector3;
   direction: THREE.Vector3;
 };
 
-function Bullet({ bulletRef, startPosition, direction }: BulletProps) {
+function Bullet({ bulletData, startPosition, direction }: BulletProps) {
+  const bulletRef = useRef<RapierRigidBody>(null);
   const hasAppliedVelocity = useRef(false);
+  const hasHitRef = useRef(bulletData.hasHit);
+  const updateEnemyHealth = useGameStore((s) => s.updateEnemyHealth);
+  const enemies = useGameStore((s) => s.enemies);
+  const addScore = useGameStore((s) => s.addScore);
 
   // RigidBodyが準備できていることを保証するためにuseFrame内で速度を適用
   useFrame(() => {
-    if (!bulletRef.current) return;
+    if (!bulletRef.current || hasHitRef.current) return;
 
     // 一度だけ速度を適用
     if (!hasAppliedVelocity.current) {
@@ -109,8 +116,34 @@ function Bullet({ bulletRef, startPosition, direction }: BulletProps) {
       hasAppliedVelocity.current = true;
     }
 
-    // TODO: 敵との衝突をチェックしてダメージを与える処理
-    // 敵システムが追加されたら実装予定
+    // 敵との衝突をチェック（簡易的な距離ベースの判定）
+    const bulletPos = bulletRef.current.translation();
+    const bulletVec = new THREE.Vector3(bulletPos.x, bulletPos.y, bulletPos.z);
+
+    enemies.forEach((enemy) => {
+      if (hasHitRef.current) return;
+
+      const enemyVec = new THREE.Vector3(...enemy.position);
+      const distance = bulletVec.distanceTo(enemyVec);
+
+      // 衝突判定（弾の半径 + 敵のサイズを考慮）
+      const collisionThreshold = BULLET_RADIUS + 0.5; // 敵のサイズの半分程度
+      if (distance < collisionThreshold) {
+        // ダメージを与える
+        const newHealth = Math.max(0, enemy.health - PISTOL_DAMAGE);
+        updateEnemyHealth(enemy.id, newHealth);
+
+        // 敵が倒れたらスコア加算
+        if (newHealth <= 0) {
+          const scoreValue = ENEMY_STATS[enemy.type].scoreValue;
+          addScore(scoreValue);
+        }
+
+        // 弾を無効化
+        bulletData.hasHit = true;
+        hasHitRef.current = true;
+      }
+    });
   });
 
   return (
