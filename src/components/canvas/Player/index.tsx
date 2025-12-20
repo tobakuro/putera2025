@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { RigidBody, RapierRigidBody } from '@react-three/rapier';
+import { RigidBody, RapierRigidBody, interactionGroups } from '@react-three/rapier';
 import { useKeyboard } from '../../../hooks/useKeyboard';
 import {
   MOVE_SPEED,
@@ -217,6 +217,7 @@ export default function Player() {
         enabledRotations={[false, false, false]}
         linearDamping={0.5}
         userData={{ isPlayer: true }}
+        collisionGroups={interactionGroups(1, [0, 3, 4, 5])} // グループ1（プレイヤー）: 地形・敵と衝突、弾丸（グループ2）とは衝突しない
       >
         {/* モデルは縮小して表示。コライダー中心に合わせて位置を調整 */}
         <group
