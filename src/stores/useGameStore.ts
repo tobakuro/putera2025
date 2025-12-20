@@ -40,6 +40,9 @@ type State = {
 
   // ゲームリセット
   resetGame: (preserveStage?: boolean) => void;
+  // リスポーン制御: トークンをインクリメントしてプレイヤーに通知
+  respawnToken: number;
+  requestRespawn: () => void;
 };
 
 const INITIAL_STATE = {
@@ -129,6 +132,10 @@ export const useGameStore = create<State>((set) => ({
       const stageId = preserveStage ? s.stageId : DEFAULT_STAGE_ID;
       return { ...INITIAL_STATE, stageId } as State;
     }),
+  // リスポーン: トークンを増やしHPを全回復する
+  respawnToken: 0,
+  requestRespawn: () =>
+    set((s) => ({ respawnToken: s.respawnToken + 1, playerHP: s.maxHP }) as Partial<State>),
 }));
 
 export default useGameStore;

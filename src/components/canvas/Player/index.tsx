@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { RigidBody, RapierRigidBody } from '@react-three/rapier';
 import { useKeyboard } from '../../../hooks/useKeyboard';
@@ -23,7 +23,7 @@ export default function Player() {
   const keys = useKeyboard();
   const stageId = useGameStore((s) => s.stageId);
 
-  const spawn = STAGE_SPAWN[stageId] ?? ([0, 5, 0] as const);
+  const spawn = useMemo(() => STAGE_SPAWN[stageId] ?? ([0, 5, 0] as const), [stageId]);
 
   // カメラの回転角度
   const rotationRef = useRef({ yaw: 0, pitch: 0 });
@@ -68,6 +68,8 @@ export default function Player() {
     };
   }, [isMoving]);
 
+  const gameState = useGameStore((s) => s.gameState);
+
   // ポインターロックの設定
   useEffect(() => {
     const dom = gl.domElement;
@@ -76,7 +78,8 @@ export default function Player() {
     const handleClick = (e: MouseEvent) => {
       // 左クリックのみポインタロックを要求（UI 要素の誤トリガを防ぐ）
       if (e.button !== 0) return;
-      // Canvas 要素へフォーカスがある場合のみロックする
+      // ポーズ/メニュー中はロックしない
+      if (useGameStore.getState().gameState !== 'playing') return;
       dom.requestPointerLock();
     };
 
@@ -98,14 +101,49 @@ export default function Player() {
     // マウスムーブは document ではなく canvas 自体で監視しておく（移動イベントはロック時にキャンバスで発火）
     dom.addEventListener('mousemove', handleMouseMove);
 
+    // ポインタロックの状態変化を監視して、ユーザーが Esc でロックを解除した場合はゲームをポーズにする
+    const handlePointerLockChange = () => {
+      // lock が解除された（pointerLockElement が null または別要素）場合
+      if (document.pointerLockElement !== dom) {
+        if (useGameStore.getState().gameState === 'playing') {
+          useGameStore.getState().setGameState('paused');
+        }
+      }
+    };
+
+    document.addEventListener('pointerlockchange', handlePointerLockChange);
+
     return () => {
       dom.removeEventListener('click', handleClick);
       dom.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('pointerlockchange', handlePointerLockChange);
     };
   }, [gl.domElement]);
 
+  // リスポーン要求を監視してプレイヤーをスポーン地点へ戻す
+  const respawnToken = useGameStore((s) => s.respawnToken);
+  useEffect(() => {
+    // token が増えるたびにスポーン
+    if (!playerRef.current) return;
+    // setLinvel で速度をリセットし、位置をスポーン位置に即時移動する
+    try {
+      playerRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      playerRef.current.setTranslation({ x: spawn[0], y: spawn[1], z: spawn[2] }, true);
+    } catch (e) {
+      // ランタイムで API が違う場合に備えて安全に握りつぶす
+      // （多くの環境では setTranslation が利用可能です）
+      // 代替: 位置取得/代入が必要ならここで対応
+      console.warn('Respawn: unable to call setTranslation on RigidBody', e);
+    }
+    // ジャンプ検出のフラグをクリア
+    prevJumpRef.current = false;
+  }, [respawnToken, spawn]);
+
   // 毎フレームの更新
   useFrame(() => {
+    // ゲームが再生中でなければ更新を行わない（ポーズでの停止）
+    if (gameState !== 'playing') return;
+
     if (!playerRef.current) return;
 
     const velocity = playerRef.current.linvel();
