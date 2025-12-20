@@ -163,20 +163,15 @@ export default function Player() {
   });
 
   return (
-    <RigidBody
-      name="player"
-      ref={playerRef}
-      colliders="ball"
-      mass={1}
-      position={spawn}
-      enabledRotations={[false, false, false]}
-      linearDamping={0.5}
-    >
-      {/* モデルは縮小して表示。コライダー中心に合わせて位置を調整 */}
-      <group
-        ref={modelRef}
-        position={[0, -PLAYER_HALF_HEIGHT * (1 / 3), 0]}
-        scale={[1 / 3, 1 / 3, 1 / 3]}
+    <>
+      <RigidBody
+        name="player"
+        ref={playerRef}
+        colliders="ball"
+        mass={1}
+        position={spawn}
+        enabledRotations={[false, false, false]}
+        linearDamping={0.5}
       >
         {/* モデルは縮小して表示。コライダー中心に合わせて位置を調整 */}
         <group
