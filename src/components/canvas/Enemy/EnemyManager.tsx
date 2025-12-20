@@ -1,29 +1,28 @@
-import { useState, useRef } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useMemo } from 'react';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import EnemySpawner from './EnemySpawner';
 import useGameStore from '../../../stores/useGameStore';
+import { perfEnd, perfStart } from '../../../utils/perf';
 
 /**
  * 敵システムの管理コンポーネント
  * プレイヤーの位置を追跡してEnemySpawnerに渡す
  */
 export default function EnemyManager() {
-  const { scene } = useThree();
   const gameState = useGameStore((s) => s.gameState);
-  const [playerPosition] = useState(() => new THREE.Vector3(0, 0, 0));
-  const positionRef = useRef(playerPosition);
+  const playerPositionState = useGameStore((s) => s.playerPosition);
+
+  // EnemySpawner に渡す Vector3 は参照を固定し、値だけを更新する
+  const playerPosition = useMemo(() => new THREE.Vector3(0, 0, 0), []);
 
   useFrame(() => {
     // ゲームが再生中でなければ更新を行わない
     if (gameState !== 'playing') return;
-    // シーン内のプレイヤーRigidBodyを探す
-    // Playerコンポーネントで設定されたnameを使用
-    scene.traverse((obj) => {
-      if (obj.userData.isPlayer) {
-        positionRef.current.copy(obj.position);
-      }
-    });
+    const t = perfStart('EnemyManager.playerPos');
+    // Player 側で毎フレーム更新しているストア座標を参照
+    playerPosition.set(playerPositionState.x, playerPositionState.y, playerPositionState.z);
+    perfEnd(t);
   });
 
   return <EnemySpawner playerPosition={playerPosition} />;

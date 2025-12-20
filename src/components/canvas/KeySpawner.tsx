@@ -191,7 +191,7 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
   return (
     <group>
       {keys.map((key) => (
-        <KeyInstance key={key.id} data={key} onCollect={handlePickup} />
+        <KeyInstance key={key.id} data={key} onCollect={handlePickup} gameState={gameState} />
       ))}
     </group>
   );
@@ -200,15 +200,16 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
 type KeyInstanceProps = {
   data: KeySpawn;
   onCollect: (id: string) => void;
+  gameState: string;
 };
 
-function KeyInstance({ data, onCollect }: KeyInstanceProps) {
+function KeyInstance({ data, onCollect, gameState }: KeyInstanceProps) {
   const { id, position, collected } = data;
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame(({ clock }) => {
     // ゲームが再生中でなければアニメーション停止
-    if (useGameStore.getState().gameState !== 'playing') return;
+    if (gameState !== 'playing') return;
     if (!groupRef.current || collected) return;
     const t = clock.getElapsedTime();
     groupRef.current.rotation.y = t * 0.9;

@@ -7,6 +7,7 @@ import useGameStore from '../../../stores/useGameStore';
 import type { Enemy as EnemyData } from '../../../stores/useGameStore';
 import { EnemyModel } from '../../models/characters/EnemyModel';
 import { PLAYER_HALF_HEIGHT } from '../../../constants/player';
+import { perfEnd, perfStart } from '../../../utils/perf';
 
 interface EnemyProps {
   enemy: EnemyData;
@@ -17,6 +18,9 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
   const bodyRef = useRef<RapierRigidBody>(null);
   const modelGroupRef = useRef<THREE.Group>(null);
   const lastAttackTimeRef = useRef<number>(0);
+  const lastMovingRef = useRef<boolean>(false);
+  const lastPosSyncTimeRef = useRef<number>(0);
+  const lastAiUpdateRef = useRef<number>(0);
   const [isMoving, setIsMoving] = useState(false);
   const updateEnemyPosition = useGameStore((s) => s.updateEnemyPosition);
   const removeEnemy = useGameStore((s) => s.removeEnemy);
@@ -38,6 +42,8 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
     if (gameState !== 'playing') return;
     if (!bodyRef.current || !modelGroupRef.current) return;
 
+    const tPerf = perfStart('Enemy.ai');
+
     const body = bodyRef.current;
     const currentPos = body.translation();
     const currentVec = new THREE.Vector3(currentPos.x, currentPos.y, currentPos.z);
@@ -45,6 +51,26 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
 
     // プレイヤーとの距離を計算
     const distanceToPlayer = currentVec.distanceTo(playerPosition);
+
+    // 更新頻度は距離に応じて間引く
+    //  - 近距離: フル更新
+    //  - 中距離: 低頻度更新 (0.1s)
+    //  - 遠距離: 更に低頻度更新 (0.5s)
+    const FULL_UPDATE_DIST = Math.min(8, stats.detectionRange); // 近距離閾値
+    const MID_UPDATE_DIST = Math.max(15, stats.detectionRange * 0.8); // 中距離閾値
+    const MID_TICK = 0.1;
+    const FAR_TICK = 0.5;
+
+    if (distanceToPlayer <= FULL_UPDATE_DIST) {
+      // 近距離はフル更新
+    } else if (distanceToPlayer <= MID_UPDATE_DIST) {
+      // 中距離は間引き
+      if (currentTime - lastAiUpdateRef.current < MID_TICK) return;
+    } else {
+      // 遠距離は更に間引き
+      if (currentTime - lastAiUpdateRef.current < FAR_TICK) return;
+    }
+    lastAiUpdateRef.current = currentTime;
 
     let moving = false;
 
@@ -92,12 +118,20 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
       moving = false;
     }
 
-    // 移動状態を更新
-    setIsMoving(moving);
+    // 移動状態は変化したときだけReact stateを更新
+    if (moving !== lastMovingRef.current) {
+      lastMovingRef.current = moving;
+      setIsMoving(moving);
+    }
 
-    // 位置をストアに反映（他のシステムで使用できるように）
-    const pos = body.translation();
-    updateEnemyPosition(enemy.id, [pos.x, pos.y, pos.z]);
+    // 位置のストア反映は間引き（10Hz）して負荷を低減
+    if (currentTime - lastPosSyncTimeRef.current >= 0.1) {
+      lastPosSyncTimeRef.current = currentTime;
+      const pos = body.translation();
+      updateEnemyPosition(enemy.id, [pos.x, pos.y, pos.z]);
+    }
+
+    perfEnd(tPerf);
   });
 
   return (
