@@ -24,7 +24,6 @@ type GLTFResult = GLTF & {
   nodes: {
     平面: THREE.Mesh;
     平面001: THREE.Mesh;
-    平面003: THREE.Mesh;
     平面004: THREE.Mesh;
     平面006: THREE.Mesh;
     平面007: THREE.Mesh;
@@ -48,7 +47,6 @@ type GLTFResult = GLTF & {
   };
   materials: {
     kabe: THREE.MeshStandardMaterial;
-    tenjyou: THREE.MeshStandardMaterial;
     yuka: THREE.MeshStandardMaterial;
   };
   animations: GLTFAction[];
@@ -73,15 +71,6 @@ export function Model(props: GroupProps) {
         position={[0.264, 2.704, 0]}
         rotation={[0, 0, -Math.PI / 2]}
         scale={[1, 1, 1.03]}
-      />
-      <mesh
-        castShadow
-        receiveShadow
-        geometry={nodes.平面003.geometry}
-        material={materials.tenjyou}
-        position={[0, 5.042, 0]}
-        rotation={[-Math.PI, 0, 0]}
-        scale={[10, 1, 10]}
       />
       <mesh
         castShadow
