@@ -59,7 +59,7 @@ export default function KeyPanel() {
             <div style={{ fontSize: 14 }}>
               鍵: {keysCollected} / {totalKeys}
             </div>
-            <div style={{ fontSize: 12, opacity: 0.8 }}>目的: ドアを開ける</div>
+            <div style={{ fontSize: 12, opacity: 0.8 }}>目的: 鍵を探せ</div>
           </div>
         </div>
       </div>
