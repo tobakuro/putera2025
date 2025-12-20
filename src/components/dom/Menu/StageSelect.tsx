@@ -16,14 +16,15 @@ export default function StageSelect({ localStage, setLocalStage, onNext, onBack 
     <div
       style={{
         position: 'relative',
-        width: '100%',
+        // ensure full-viewport width to avoid horizontal gaps introduced by parent centering
+        width: '100vw',
+        left: 0,
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        // remove horizontal padding so background fills edge-to-edge
-        padding: '24px 0',
+        padding: 0,
         overflow: 'hidden',
       }}
     >
@@ -40,6 +41,9 @@ export default function StageSelect({ localStage, setLocalStage, onNext, onBack 
           objectFit: 'cover',
           objectPosition: 'center',
           zIndex: 0,
+          // slightly enlarge background so important edges show better
+          transform: 'scale(1.06)',
+          transformOrigin: 'center',
           // keep a very light dim so text remains readable but background not too dark
           filter: 'brightness(1) contrast(1.02)',
         }}

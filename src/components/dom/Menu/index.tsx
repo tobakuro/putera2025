@@ -54,39 +54,120 @@ export default function Menu() {
 
       {step === 'level' && (
         <>
-          <h2 style={{ margin: 0 }}>レベル選択 — {localStage}</h2>
-          <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
-            {[1, 2, 3, 4].map((lv) => (
-              <div
-                key={lv}
-                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-              >
-                <button
-                  data-level={lv}
-                  onClick={() => {
-                    setLevel(lv);
-                    onStartGame();
-                  }}
-                  style={{
-                    width: 120,
-                    height: 80,
-                    borderRadius: 8,
-                    background: '#eaeaea',
-                    border: '1px dashed #ccc',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div style={{ color: '#333', fontWeight: 600 }}>Level {lv}</div>
-                </button>
-                <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>Preview Tile</div>
-              </div>
-            ))}
-          </div>
+          {/* Level select full-screen layout with background image - show full image without dark overlay */}
+          <div
+            style={{
+              position: 'relative',
+              width: '100vw',
+              height: '100vh',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              // set background via CSS so it behaves as a fixed cover background
+              backgroundImage: "url('/textures/2D_UI/level.png')",
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              backgroundAttachment: 'fixed',
+            }}
+          >
+            {/* Content wrapper (no descriptive text) */}
+            <div style={{ position: 'relative', zIndex: 2, width: '100%', height: '100%' }}>
+              {/* Invisible hit zones for levels (percent-based) */}
+              <button
+                aria-label="Level-1"
+                onClick={() => {
+                  setLevel(1);
+                  onStartGame();
+                }}
+                style={{
+                  position: 'absolute',
+                  left: '33%',
+                  top: '26%',
+                  width: '16%',
+                  height: '22%',
+                  background: 'transparent',
+                  border: 'none',
+                  zIndex: 3,
+                  cursor: 'pointer',
+                }}
+              />
 
-          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-            <button onClick={() => setStep('stage')} style={{ padding: '8px 12px' }}>
-              Back
-            </button>
+              <button
+                aria-label="Level-2"
+                onClick={() => {
+                  setLevel(2);
+                  onStartGame();
+                }}
+                style={{
+                  position: 'absolute',
+                  right: '33%',
+                  top: '26%',
+                  width: '16%',
+                  height: '22%',
+                  background: 'transparent',
+                  border: 'none',
+                  zIndex: 3,
+                  cursor: 'pointer',
+                }}
+              />
+
+              <button
+                aria-label="Level-3"
+                onClick={() => {
+                  setLevel(3);
+                  onStartGame();
+                }}
+                style={{
+                  position: 'absolute',
+                  left: '33%',
+                  bottom: '26%',
+                  width: '16%',
+                  height: '22%',
+                  background: 'transparent',
+                  border: 'none',
+                  zIndex: 3,
+                  cursor: 'pointer',
+                }}
+              />
+
+              <button
+                aria-label="Level-4"
+                onClick={() => {
+                  setLevel(4);
+                  onStartGame();
+                }}
+                style={{
+                  position: 'absolute',
+                  right: '33%',
+                  bottom: '26%',
+                  width: '16%',
+                  height: '22%',
+                  background: 'transparent',
+                  border: 'none',
+                  zIndex: 3,
+                  cursor: 'pointer',
+                }}
+              />
+
+              {/* Back hit area centered bottom (percent-based) */}
+              <button
+                aria-label="LevelBack"
+                onClick={() => setStep('stage')}
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  bottom: '10%',
+                  width: '5%',
+                  height: '8%',
+                  background: 'transparent',
+                  border: 'none',
+                  zIndex: 3,
+                  cursor: 'pointer',
+                }}
+              />
+            </div>
           </div>
         </>
       )}
