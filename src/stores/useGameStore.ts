@@ -30,6 +30,7 @@ type State = {
   // プレイヤー状態
   playerHP: number;
   maxHP: number;
+  isDead: boolean; // プレイヤーが死亡状態か
   takeDamage: (damage: number) => void;
   heal: (amount: number) => void;
 
@@ -75,6 +76,7 @@ const INITIAL_STATE = {
   score: 0,
   playerHP: 100,
   maxHP: 100,
+  isDead: false,
   currentAmmo: 30,
   maxAmmo: 30,
   reserveAmmo: 90,
@@ -107,7 +109,7 @@ export const useGameStore = create<State>((set) => ({
       const newHP = Math.max(0, s.playerHP - damage);
       return {
         playerHP: newHP,
-        gameState: newHP <= 0 ? 'gameover' : s.gameState,
+        isDead: newHP <= 0 ? true : s.isDead,
       } as Partial<State>;
     }),
   heal: (amount) =>

@@ -66,7 +66,7 @@ export default function HeartSpawner({ count = DEFAULT_HEART_COUNT }: HeartSpawn
       setHearts(createSpawnSet(count, pts));
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [count, gameState, itemResetTrigger]);
+  }, [count, gameState, itemResetTrigger, stageId]);
   const handlePickup = useCallback(
     (id: string) => {
       setHearts((prev) => prev.map((h) => (h.id === id ? { ...h, collected: true } : h)));

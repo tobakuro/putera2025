@@ -92,7 +92,7 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
     }, 0);
     prevGameStateRef.current = gameState;
     return () => window.clearTimeout(timer);
-  }, [count, gameState, resetKeys, itemResetTrigger]);
+  }, [count, gameState, resetKeys, itemResetTrigger, stageId]);
 
   useEffect(() => {
     // totalKeys represents the total remaining in the level = on-map + held

@@ -22,6 +22,7 @@ export default function Player() {
   const { camera, gl, scene } = useThree();
   const keys = useKeyboard();
   const stageId = useGameStore((s) => s.stageId);
+  const isDead = useGameStore((s) => s.isDead);
 
   const setPlayerPosition = useGameStore((s) => s.setPlayerPosition);
   const spawn = useMemo(() => STAGE_SPAWN[stageId] ?? ([0, 5, 0] as const), [stageId]);
@@ -33,6 +34,7 @@ export default function Player() {
   // 表示状態をレンダー側に渡すための state
   const [isMoving, setIsMoving] = useState(false);
   const [headPitchState, setHeadPitchState] = useState(0);
+  const [deathRotation, setDeathRotation] = useState(0); // 死亡時の回転角度
   const footstepAudioRef = useRef<HTMLAudioElement | null>(null);
   // ジャンプ押下の立ち上がり検出用
   const prevJumpRef = useRef(false);
@@ -124,8 +126,8 @@ export default function Player() {
   // リスポーン要求を監視してプレイヤーをスポーン地点へ戻す
   const respawnToken = useGameStore((s) => s.respawnToken);
   useEffect(() => {
-    // token が増えるたびにスポーン
-    if (!playerRef.current) return;
+    // token が増えるたびにスポーン（死亡時はリスポーンしない）
+    if (!playerRef.current || isDead) return;
     // setLinvel で速度をリセットし、位置をスポーン位置に即時移動する
     try {
       playerRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
@@ -138,7 +140,7 @@ export default function Player() {
     }
     // ジャンプ検出のフラグをクリア
     prevJumpRef.current = false;
-  }, [respawnToken, spawn]);
+  }, [respawnToken, spawn, isDead]);
 
   // 毎フレームの更新
   useFrame(() => {
@@ -146,6 +148,15 @@ export default function Player() {
     if (gameState !== 'playing') return;
 
     if (!playerRef.current) return;
+
+    // 死亡時の処理
+    if (isDead) {
+      // 速度を0に設定して停止
+      playerRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      // ゆっくり倒れ込む回転を追加
+      setDeathRotation((prev) => Math.min(prev + 0.01, Math.PI / 2)); // よりゆっくり回転
+      return;
+    }
 
     const velocity = playerRef.current.linvel();
     const position = playerRef.current.translation();
@@ -182,16 +193,22 @@ export default function Player() {
     }
     prevJumpRef.current = keys.jump;
 
-    // カメラの位置と回転を更新
-    // カメラはプレイヤー中心 + 半高 + 任意のオフセットに配置し、プレイヤーの向きに合わせて後方に引く
-    const camOffset = new THREE.Vector3(0, PLAYER_HALF_HEIGHT + CAMERA_HEIGHT, -CAMERA_BACK_OFFSET);
-    camOffset.applyEuler(new THREE.Euler(0, rotationRef.current.yaw, 0));
-    camera.position.set(
-      position.x + camOffset.x,
-      position.y + camOffset.y,
-      position.z + camOffset.z
-    );
-    camera.rotation.set(rotationRef.current.pitch, rotationRef.current.yaw, 0);
+    // カメラの位置と回転を更新（死亡時は固定）
+    if (!isDead) {
+      // カメラはプレイヤー中心 + 半高 + 任意のオフセットに配置し、プレイヤーの向きに合わせて後方に引く
+      const camOffset = new THREE.Vector3(
+        0,
+        PLAYER_HALF_HEIGHT + CAMERA_HEIGHT,
+        -CAMERA_BACK_OFFSET
+      );
+      camOffset.applyEuler(new THREE.Euler(0, rotationRef.current.yaw, 0));
+      camera.position.set(
+        position.x + camOffset.x,
+        position.y + camOffset.y,
+        position.z + camOffset.z
+      );
+      camera.rotation.set(rotationRef.current.pitch, rotationRef.current.yaw, 0);
+    }
     // ゲームストアに座標を更新
     setPlayerPosition({
       x: Math.round(position.x * 10) / 10, // 小数点1桁に丸める
@@ -223,8 +240,9 @@ export default function Player() {
           ref={modelRef}
           position={[0, -PLAYER_HALF_HEIGHT * (1 / 3), 0]}
           scale={[1 / 3, 1 / 3, 1 / 3]}
+          rotation={isDead ? [deathRotation, 0, 0] : [0, 0, 0]}
         >
-          <PlayerModel play={isMoving} headPitch={headPitchState} />
+          <PlayerModel play={isMoving && !isDead} headPitch={headPitchState} />
         </group>
       </RigidBody>
 
