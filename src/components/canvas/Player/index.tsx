@@ -210,6 +210,7 @@ export default function Player() {
         position={spawn}
         enabledRotations={[false, false, false]}
         linearDamping={0.5}
+        userData={{ isPlayer: true }}
       >
         {/* モデルは縮小して表示。コライダー中心に合わせて位置を調整 */}
         <group
