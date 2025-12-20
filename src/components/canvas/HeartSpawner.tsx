@@ -6,6 +6,7 @@ import { useGLTF } from '@react-three/drei';
 import useGameStore from '../../stores/useGameStore';
 
 const HEART_MODEL_PATH = '/models/3D/glb/ha-to/kaihuku_ha-to_move.glb';
+
 const HEART_SPAWN_POINTS: [number, number, number][] = [
   [2, 1, 6],
   [-12, 1, 14],
@@ -48,7 +49,7 @@ type HeartSpawnerProps = {
 export default function HeartSpawner({ count = DEFAULT_HEART_COUNT }: HeartSpawnerProps) {
   const heal = useGameStore((s) => s.heal);
   const gameState = useGameStore((s) => s.gameState);
-
+  const itemResetTrigger = useGameStore((s) => s.itemResetTrigger);
   const [hearts, setHearts] = useState<HeartSpawn[]>(() => createSpawnSet(count));
 
   useEffect(() => {
@@ -57,8 +58,7 @@ export default function HeartSpawner({ count = DEFAULT_HEART_COUNT }: HeartSpawn
       setHearts(createSpawnSet(count));
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [count, gameState]);
-
+  }, [count, gameState, itemResetTrigger]);
   const handlePickup = useCallback(
     (id: string) => {
       setHearts((prev) => prev.map((h) => (h.id === id ? { ...h, collected: true } : h)));
