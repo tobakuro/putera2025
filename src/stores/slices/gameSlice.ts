@@ -8,7 +8,7 @@ export const createGameSlice = (set: SetStateType): Partial<State> => ({
   setGameState: (gameState: 'menu' | 'playing' | 'paused' | 'gameover') => set({ gameState }),
 
   stageId: 'stage0',
-  setStageId: (stageId: 'stage0' | 'stage1') => set({ stageId }),
+  setStageId: (stageId: 'stage0' | 'stage1') => set({ stageId, keysCollected: 0, totalKeys: 0 }),
 
   score: 0,
   addScore: (n: number) => set((s: State) => ({ score: s.score + n })),
