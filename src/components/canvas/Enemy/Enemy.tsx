@@ -7,6 +7,7 @@ import useGameStore from '../../../stores/useGameStore';
 import type { Enemy as EnemyData } from '../../../stores/useGameStore';
 import { EnemyModel } from '../../models/characters/EnemyModel';
 import { PLAYER_HALF_HEIGHT } from '../../../constants/player';
+import { perfEnd, perfStart } from '../../../utils/perf';
 
 interface EnemyProps {
   enemy: EnemyData;
@@ -17,6 +18,8 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
   const bodyRef = useRef<RapierRigidBody>(null);
   const modelGroupRef = useRef<THREE.Group>(null);
   const lastAttackTimeRef = useRef<number>(0);
+  const lastMovingRef = useRef<boolean>(false);
+  const lastPosSyncTimeRef = useRef<number>(0);
   const [isMoving, setIsMoving] = useState(false);
   const updateEnemyPosition = useGameStore((s) => s.updateEnemyPosition);
   const removeEnemy = useGameStore((s) => s.removeEnemy);
@@ -37,6 +40,8 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
     // ゲームが再生中でなければ敵のAIを停止
     if (gameState !== 'playing') return;
     if (!bodyRef.current || !modelGroupRef.current) return;
+
+    const tPerf = perfStart('Enemy.ai');
 
     const body = bodyRef.current;
     const currentPos = body.translation();
@@ -92,12 +97,20 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
       moving = false;
     }
 
-    // 移動状態を更新
-    setIsMoving(moving);
+    // 移動状態は変化したときだけReact stateを更新
+    if (moving !== lastMovingRef.current) {
+      lastMovingRef.current = moving;
+      setIsMoving(moving);
+    }
 
-    // 位置をストアに反映（他のシステムで使用できるように）
-    const pos = body.translation();
-    updateEnemyPosition(enemy.id, [pos.x, pos.y, pos.z]);
+    // 位置のストア反映は間引き（10Hz）して負荷を低減
+    if (currentTime - lastPosSyncTimeRef.current >= 0.1) {
+      lastPosSyncTimeRef.current = currentTime;
+      const pos = body.translation();
+      updateEnemyPosition(enemy.id, [pos.x, pos.y, pos.z]);
+    }
+
+    perfEnd(tPerf);
   });
 
   return (

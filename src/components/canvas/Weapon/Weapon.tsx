@@ -11,6 +11,7 @@ import {
 } from '../../../constants/weapons';
 import useGameStore from '../../../stores/useGameStore';
 import { ENEMY_STATS } from '../../../constants/enemies';
+import { perfEnd, perfStart } from '../../../utils/perf';
 
 type BulletData = {
   id: number;
@@ -38,6 +39,7 @@ export default function Weapon({ playerRef, isShooting, cameraRotationRef }: Wea
   // 弾が消える処理(発射されてから消えるまでの時間は定数をいじってね)
   useFrame((state) => {
     if (gameState !== 'playing') return;
+    const tPerf = perfStart('Weapon.bullets');
     const now = state.clock.getElapsedTime();
 
     bullets.current = bullets.current.filter((bullet) => {
@@ -55,6 +57,7 @@ export default function Weapon({ playerRef, isShooting, cameraRotationRef }: Wea
       lastShotTime.current = now;
     }
     prevShootingRef.current = isShooting;
+    perfEnd(tPerf);
   });
 
   const shoot = (currentTime: number) => {
@@ -104,11 +107,30 @@ function Bullet({ startPosition, direction }: BulletProps) {
   const hasAppliedVelocity = useRef(false);
   const [hasHit, setHasHit] = useState(false);
   const updateEnemyHealth = useGameStore((s) => s.updateEnemyHealth);
-  const enemies = useGameStore((s) => s.enemies);
   const addScore = useGameStore((s) => s.addScore);
 
-  // 壁や地形との衝突を検出
-  const handleCollision = () => {
+  // 衝突（壁/地形/敵）を検出
+  const handleCollision = ({ other }: { other: { rigidBodyObject?: { userData?: unknown } } }) => {
+    if (hasHit) return;
+
+    const ud = other?.rigidBodyObject?.userData;
+    const udObj = ud && typeof ud === 'object' ? (ud as Record<string, unknown>) : null;
+
+    // 敵の RigidBody には Enemy.tsx で userData: { type: 'enemy', id } を設定済み
+    if (udObj?.type === 'enemy' && typeof udObj?.id === 'string') {
+      const enemyId = udObj.id;
+      const enemy = useGameStore.getState().enemies.find((e) => e.id === enemyId);
+      if (enemy) {
+        const newHealth = Math.max(0, enemy.health - PISTOL_DAMAGE);
+        updateEnemyHealth(enemy.id, newHealth);
+        if (newHealth <= 0) {
+          const scoreValue = ENEMY_STATS[enemy.type].scoreValue;
+          addScore(scoreValue);
+        }
+      }
+    }
+
+    // 何かに当たったら弾は無効化
     setHasHit(true);
   };
 
@@ -123,36 +145,6 @@ function Bullet({ startPosition, direction }: BulletProps) {
       bulletRef.current.setLinvel(velocity, true);
       hasAppliedVelocity.current = true;
     }
-
-    // 敵との衝突をチェック（簡易的な距離ベースの判定）
-    const bulletPos = bulletRef.current.translation();
-    const bulletVec = new THREE.Vector3(bulletPos.x, bulletPos.y, bulletPos.z);
-
-    enemies.forEach((enemy) => {
-      if (hasHit) return;
-
-      const enemyVec = new THREE.Vector3(...enemy.position);
-      // 敵の中心をY軸方向にオフセット（カプセルコライダーの中心に合わせる）
-      enemyVec.y += 0.5;
-      const distance = bulletVec.distanceTo(enemyVec);
-
-      // 衝突判定（弾の半径 + カプセルコライダーの半径を考慮）
-      const collisionThreshold = BULLET_RADIUS + 0.4; // カプセルの半径0.3 + 余裕0.1
-      if (distance < collisionThreshold) {
-        // ダメージを与える
-        const newHealth = Math.max(0, enemy.health - PISTOL_DAMAGE);
-        updateEnemyHealth(enemy.id, newHealth);
-
-        // 敵が倒れたらスコア加算
-        if (newHealth <= 0) {
-          const scoreValue = ENEMY_STATS[enemy.type].scoreValue;
-          addScore(scoreValue);
-        }
-
-        // 弾を無効化
-        setHasHit(true);
-      }
-    });
   });
 
   // 弾が当たったら表示しない
@@ -172,7 +164,7 @@ function Bullet({ startPosition, direction }: BulletProps) {
       linearDamping={0} // 空気抵抗なし
       angularDamping={0} // 回転減衰なし
       collisionGroups={interactionGroups(2, [0, 3, 4, 5])} // グループ2（弾丸）: 地形・敵と衝突、プレイヤー（グループ1）とは衝突しない
-      onCollisionEnter={handleCollision} // 壁や地形との衝突時に弾を無効化
+      onCollisionEnter={handleCollision} // 壁/地形/敵との衝突時に弾を無効化（敵の場合はここでダメージ適用）
     >
       <mesh>
         <sphereGeometry args={[BULLET_RADIUS, 8, 8]} />

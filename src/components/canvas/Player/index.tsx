@@ -23,6 +23,7 @@ import * as THREE from 'three';
 import { Model as PlayerModel } from '../../models/characters/Player';
 import useGameStore from '../../../stores/useGameStore';
 import Weapon from '../Weapon/Weapon';
+import { perfEnd, perfStart } from '../../../utils/perf';
 
 // カメラモード: 'third' または 'first' は useGameStore に保存される
 
@@ -57,6 +58,23 @@ export default function Player() {
   // ジャンプ押下の立ち上がり検出用
   const prevJumpRef = useRef(false);
   const raycasterRef = useRef(new THREE.Raycaster());
+  // 接地判定でレイキャストする対象を限定して、毎フレームのシーントラバースを避ける
+  const groundTargetsRef = useRef<THREE.Object3D[]>([]);
+
+  useEffect(() => {
+    if (!scene) return;
+    const targets: THREE.Object3D[] = [];
+    // Scene全体から「床/地形」と思われるオブジェクトだけを一度抽出してキャッシュ
+    // - rapierのRigidBodyはObject3Dとしても存在するため、userData.type を優先
+    // - 名前の慣習がある場合はここに追加できる
+    scene.traverse((obj) => {
+      const t = obj.userData?.type;
+      if (t === 'stage' || t === 'ground' || t === 'wall') {
+        targets.push(obj);
+      }
+    });
+    groundTargetsRef.current = targets;
+  }, [scene]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -209,7 +227,13 @@ export default function Player() {
     // つまり、RigidBodyの中心(position)がちょうどカプセルの底になる
     const rayOrigin = new THREE.Vector3(position.x, position.y + 0.1, position.z);
     raycasterRef.current.set(rayOrigin, new THREE.Vector3(0, -1, 0));
-    const intersects = scene ? raycasterRef.current.intersectObjects(scene.children, true) : [];
+    const tPerf = perfStart('Player.groundRay');
+    const targets = groundTargetsRef.current;
+    // キャッシュが空の場合は従来通り（ただし重い）にフォールバック
+    const intersects = scene
+      ? raycasterRef.current.intersectObjects(targets.length > 0 ? targets : scene.children, true)
+      : [];
+    perfEnd(tPerf);
     // レイの起点を少し上げたので、その分を考慮
     const grounded = intersects.length > 0 && intersects[0].distance <= 0.1 + GROUNDED_RAY_DISTANCE;
 
