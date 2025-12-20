@@ -19,6 +19,15 @@ export type GroupProps = {
 
 export function Model(props: GroupProps) {
   const gltf = useGLTF('/models/3D/glb/stage1/stage_L.glb') as unknown as GLTF;
+  // 一括で地形タグ付け（接地判定のレイキャスト対象キャッシュ用）
+  React.useMemo(() => {
+    gltf.scene.traverse((obj) => {
+      if ((obj as THREE.Mesh).isMesh) {
+        if (!obj.userData?.type) obj.userData = { ...obj.userData, type: 'ground' };
+      }
+    });
+    return null;
+  }, [gltf.scene]);
   return <primitive object={gltf.scene} {...props} />;
 }
 

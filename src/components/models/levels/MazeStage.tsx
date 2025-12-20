@@ -83,6 +83,7 @@ export default function MazeStage() {
       <RigidBody type="fixed" colliders="cuboid">
         <mesh
           receiveShadow
+          userData={{ type: 'ground' }}
           position={[(bounds.minX + bounds.maxX) / 2, 0, (bounds.minZ + bounds.maxZ) / 2]}
         >
           <boxGeometry

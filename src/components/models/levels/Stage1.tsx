@@ -242,6 +242,7 @@ export function Model(props: GroupProps) {
         receiveShadow
         geometry={nodes.平面002.geometry}
         material={materials.yuka}
+        userData={{ type: 'ground' }}
         scale={[10, 1, 10]}
       />
     </group>
