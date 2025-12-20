@@ -4,6 +4,7 @@ import React from 'react';
 import Scene from '../components/canvas/Scene';
 import Menu from '../components/dom/Menu';
 import HUD from '../components/dom/HUD';
+import PauseOverlay from '../components/dom/PauseOverlay';
 import useGameStore from '../stores/useGameStore';
 
 export default function Page() {
@@ -16,6 +17,7 @@ export default function Page() {
     <>
       <Scene />
       <HUD />
+      {gameState === 'paused' && <PauseOverlay />}
     </>
   );
 }
