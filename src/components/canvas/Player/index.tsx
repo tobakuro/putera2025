@@ -5,13 +5,13 @@ import {
   RapierRigidBody,
   interactionGroups,
   CapsuleCollider,
+  CuboidCollider,
 } from '@react-three/rapier';
 import { useKeyboard } from '../../../hooks/useKeyboard';
 import {
   MOVE_SPEED,
   JUMP_FORCE,
   MOUSE_SENSITIVITY,
-  GROUNDED_RAY_DISTANCE,
   CAMERA_HEIGHT,
   CAMERA_BACK_OFFSET,
   PLAYER_HALF_HEIGHT,
@@ -23,13 +23,12 @@ import * as THREE from 'three';
 import { Model as PlayerModel } from '../../models/characters/Player';
 import useGameStore from '../../../stores/useGameStore';
 import Weapon from '../Weapon/Weapon';
-import { perfEnd, perfStart } from '../../../utils/perf';
 
 // カメラモード: 'third' または 'first' は useGameStore に保存される
 
 export default function Player() {
   const playerRef = useRef<RapierRigidBody>(null);
-  const { camera, gl, scene } = useThree();
+  const { camera, gl } = useThree();
   const keys = useKeyboard();
   const stageId = useGameStore((s) => s.stageId);
 
@@ -57,24 +56,7 @@ export default function Player() {
   const footstepAudioRef = useRef<HTMLAudioElement | null>(null);
   // ジャンプ押下の立ち上がり検出用
   const prevJumpRef = useRef(false);
-  const raycasterRef = useRef(new THREE.Raycaster());
-  // 接地判定でレイキャストする対象を限定して、毎フレームのシーントラバースを避ける
-  const groundTargetsRef = useRef<THREE.Object3D[]>([]);
-
-  useEffect(() => {
-    if (!scene) return;
-    const targets: THREE.Object3D[] = [];
-    // Scene全体から「床/地形」と思われるオブジェクトだけを一度抽出してキャッシュ
-    // - rapierのRigidBodyはObject3Dとしても存在するため、userData.type を優先
-    // - 名前の慣習がある場合はここに追加できる
-    scene.traverse((obj) => {
-      const t = obj.userData?.type;
-      if (t === 'stage' || t === 'ground' || t === 'wall') {
-        targets.push(obj);
-      }
-    });
-    groundTargetsRef.current = targets;
-  }, [scene]);
+  const groundedCountRef = useRef(0);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -220,22 +202,8 @@ export default function Player() {
     setIsMoving(direction.length() > 0.01);
     setHeadPitchState(rotationRef.current.pitch);
 
-    // 接地判定: カプセルコライダーの底から少し上の位置からレイを飛ばす
-    // カプセルの位置 = position + [0, PLAYER_HALF_HEIGHT, 0]
-    // カプセルの底 = カプセル中心 - (PLAYER_BODY_LENGTH/2 + PLAYER_RADIUS)
-    //              = position + PLAYER_HALF_HEIGHT - PLAYER_HALF_HEIGHT = position
-    // つまり、RigidBodyの中心(position)がちょうどカプセルの底になる
-    const rayOrigin = new THREE.Vector3(position.x, position.y + 0.1, position.z);
-    raycasterRef.current.set(rayOrigin, new THREE.Vector3(0, -1, 0));
-    const tPerf = perfStart('Player.groundRay');
-    const targets = groundTargetsRef.current;
-    // キャッシュが空の場合は従来通り（ただし重い）にフォールバック
-    const intersects = scene
-      ? raycasterRef.current.intersectObjects(targets.length > 0 ? targets : scene.children, true)
-      : [];
-    perfEnd(tPerf);
-    // レイの起点を少し上げたので、その分を考慮
-    const grounded = intersects.length > 0 && intersects[0].distance <= 0.1 + GROUNDED_RAY_DISTANCE;
+    // 接地判定: Rapierの足元センサーで判定（毎フレームRaycastしない）
+    const grounded = groundedCountRef.current > 0;
 
     // 立ち上がり検出でジャンプを発火（押し始めのみ）
     const rising = keys.jump && !prevJumpRef.current;
@@ -298,6 +266,23 @@ export default function Player() {
         <CapsuleCollider
           args={[PLAYER_BODY_LENGTH / 2, PLAYER_RADIUS]}
           position={[0, PLAYER_HALF_HEIGHT, 0]}
+        />
+
+        {/* 足元センサー（接地判定用）。地形は userData.type='ground' を付与済み */}
+        <CuboidCollider
+          args={[PLAYER_RADIUS * 0.9, 0.08, PLAYER_RADIUS * 0.9]}
+          position={[0, 0.05, 0]}
+          sensor
+          onIntersectionEnter={({ other }) => {
+            const t = other?.rigidBodyObject?.userData?.type;
+            if (t !== 'ground') return;
+            groundedCountRef.current += 1;
+          }}
+          onIntersectionExit={({ other }) => {
+            const t = other?.rigidBodyObject?.userData?.type;
+            if (t !== 'ground') return;
+            groundedCountRef.current = Math.max(0, groundedCountRef.current - 1);
+          }}
         />
         {/* モデルは縮小して表示。コライダー中心に合わせて位置を調整 */}
         <group
