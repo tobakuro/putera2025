@@ -25,6 +25,13 @@ type State = {
   shoot: () => boolean; // 射撃成功したらtrue
   reload: () => void;
 
+  // カギ
+  keysCollected: number;
+  totalKeys: number;
+  setTotalKeys: (total: number) => void;
+  collectKey: () => void;
+  resetKeys: () => void;
+
   // ゲームリセット
   resetGame: () => void;
 };
@@ -37,6 +44,8 @@ const INITIAL_STATE = {
   currentAmmo: 30,
   maxAmmo: 30,
   reserveAmmo: 90,
+  keysCollected: 0,
+  totalKeys: 1,
 };
 
 export const useGameStore = create<State>((set) => ({
@@ -84,6 +93,21 @@ export const useGameStore = create<State>((set) => ({
         reserveAmmo: s.reserveAmmo - available,
       };
     }),
+
+  // カギ
+  setTotalKeys: (total) =>
+    set((s) => {
+      const clampedTotal = Math.max(0, total);
+      return {
+        totalKeys: clampedTotal,
+        keysCollected: Math.min(s.keysCollected, clampedTotal),
+      } as Partial<State>;
+    }),
+  collectKey: () =>
+    set((s) => ({
+      keysCollected: Math.min(s.totalKeys, s.keysCollected + 1),
+    })),
+  resetKeys: () => set({ keysCollected: 0 }),
 
   // ゲームリセット
   resetGame: () => set(INITIAL_STATE),

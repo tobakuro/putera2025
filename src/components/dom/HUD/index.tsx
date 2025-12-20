@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import useGameStore from '../../../stores/useGameStore';
 
@@ -8,6 +8,8 @@ export default function HUD() {
   const maxHP = useGameStore((s) => s.maxHP);
   const currentAmmo = useGameStore((s) => s.currentAmmo);
   const reserveAmmo = useGameStore((s) => s.reserveAmmo);
+  const keysCollected = useGameStore((s) => s.keysCollected);
+  const totalKeys = useGameStore((s) => s.totalKeys);
 
   // simple time placeholder (could be wired to store or game timer)
   const gameState = useGameStore((s) => s.gameState);
@@ -37,6 +39,32 @@ export default function HUD() {
   const hpPercent = maxHP > 0 ? Math.round((playerHP / maxHP) * 100) : 0;
   const hpBlocks = Math.max(0, Math.min(12, Math.round((hpPercent / 100) * 12)));
   const hpBar = '■'.repeat(hpBlocks);
+
+  const keyPickupAudioRef = useRef<HTMLAudioElement | null>(null);
+  const prevKeysRef = useRef(keysCollected);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const audio = new Audio('/sounds/keyget.mp3');
+    audio.volume = 0.35;
+    keyPickupAudioRef.current = audio;
+    return () => {
+      audio.pause();
+      keyPickupAudioRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const audio = keyPickupAudioRef.current;
+    if (!audio) return;
+    if (keysCollected > prevKeysRef.current) {
+      audio.currentTime = 0;
+      audio.play().catch(() => {
+        /* auto-play restrictions */
+      });
+    }
+    prevKeysRef.current = keysCollected;
+  }, [keysCollected]);
 
   const containerStyle: React.CSSProperties = {
     position: 'fixed',
@@ -119,7 +147,7 @@ export default function HUD() {
                   display: 'inline-block',
                 }}
               />
-              ] (0/1)
+              ] ({keysCollected}/{totalKeys})
             </div>
           </div>
         </div>
