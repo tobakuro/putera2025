@@ -160,18 +160,17 @@ function Bullet({ startPosition, direction }: BulletProps) {
         setHasHit(true);
       }
     });
-  });
 
-  // 毎フレーム、モデルの底面がカメラを向くように回転を設定する（トップレベルのuseFrame）
-  useFrame(() => {
+    // 毎フレーム、モデルの底面がカメラを向くように回転を設定する
     const vis = visualRef.current;
-    if (!vis) return;
-    const worldPos = new THREE.Vector3();
-    vis.getWorldPosition(worldPos);
-    const toCam = new THREE.Vector3().subVectors(camera.position, worldPos).normalize();
-    const fromVec = new THREE.Vector3(0, -1, 0);
-    const q = new THREE.Quaternion().setFromUnitVectors(fromVec, toCam);
-    vis.quaternion.slerp(q, 0.3);
+    if (vis) {
+      const worldPos = new THREE.Vector3();
+      vis.getWorldPosition(worldPos);
+      const toCam = new THREE.Vector3().subVectors(camera.position, worldPos).normalize();
+      const fromVec = new THREE.Vector3(0, -1, 0);
+      const q = new THREE.Quaternion().setFromUnitVectors(fromVec, toCam);
+      vis.quaternion.slerp(q, 0.3);
+    }
   });
 
   // 弾が当たったら表示しない
