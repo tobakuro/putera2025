@@ -17,18 +17,25 @@ export default function HUD() {
   const stageId = useGameStore((s) => s.stageId);
   const [seconds, setSeconds] = useState(0);
   const [timeOffset, setTimeOffset] = useState(0); // seconds offset applied to displayed time
+  const prevGameStateRef = useRef(gameState);
 
   // start/stop timer when gameState becomes 'playing'
   useEffect(() => {
     let id: number | undefined;
+    // Track previous gameState to distinguish resume vs new start
+    const prev = prevGameStateRef.current;
     if (gameState === 'playing') {
-      // reset timer on new play session (defer to avoid synchronous setState in effect)
-      setTimeout(() => setSeconds(0), 0);
+      // Only reset timer if we are entering playing from menu or gameover (new session).
+      if (prev === 'menu' || prev === 'gameover') {
+        // reset timer on new play session (defer to avoid synchronous setState in effect)
+        setTimeout(() => setSeconds(0), 0);
+      }
       id = window.setInterval(() => setSeconds((s) => s + 1), 1000);
-    } else {
-      // ensure timer is reset when not playing
+    } else if (gameState === 'menu' || gameState === 'gameover') {
+      // reset when explicitly returning to menu or on gameover
       setTimeout(() => setSeconds(0), 0);
     }
+    prevGameStateRef.current = gameState;
     return () => {
       if (id !== undefined) clearInterval(id);
     };

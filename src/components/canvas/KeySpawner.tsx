@@ -4,6 +4,7 @@ import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import { useGLTF } from '@react-three/drei';
 import useGameStore from '../../stores/useGameStore';
+import { MAX_KEYS } from '../../constants/keys';
 
 const KEY_MODEL_PATH = '/models/3D/glb/key/key_move.glb';
 const KEY_SPAWN_POINTS: [number, number, number][] = [
@@ -16,7 +17,7 @@ const KEY_SPAWN_POINTS: [number, number, number][] = [
   [14, 1, -18],
   [22, 1, 8],
 ];
-const DEFAULT_KEY_COUNT = 3;
+// default count can be overridden via prop; MAX_KEYS defines game-wide maximum
 
 function shuffle<T>(input: T[]): T[] {
   const arr = [...input];
@@ -44,33 +45,53 @@ type KeySpawnerProps = {
   count?: number;
 };
 
-export default function KeySpawner({ count = DEFAULT_KEY_COUNT }: KeySpawnerProps) {
+export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
   const collectKey = useGameStore((s) => s.collectKey);
   const setTotalKeys = useGameStore((s) => s.setTotalKeys);
   const resetKeys = useGameStore((s) => s.resetKeys);
+  const keysCollected = useGameStore((s) => s.keysCollected);
   const gameState = useGameStore((s) => s.gameState);
   const itemResetTrigger = useGameStore((s) => s.itemResetTrigger);
+  const prevGameStateRef = useRef(gameState);
 
-  const [keys, setKeys] = useState<KeySpawn[]>(() => createSpawnSet(count));
+  // Ensure we don't spawn more keys than allowed by MAX_KEYS when
+  // combined with the player's currently held keys.
+  const effectiveSpawnCount = Math.max(
+    0,
+    Math.min(count, MAX_KEYS - keysCollected, KEY_SPAWN_POINTS.length)
+  );
+
+  const [keys, setKeys] = useState<KeySpawn[]>(() => createSpawnSet(effectiveSpawnCount));
 
   useEffect(() => {
     if (gameState !== 'playing') {
+      prevGameStateRef.current = gameState;
       return;
     }
+    // Only reset keys when entering playing from menu or gameover (new session)
+    const prev = prevGameStateRef.current;
     const timer = window.setTimeout(() => {
-      setKeys(createSpawnSet(count));
-      resetKeys();
+      const spawnCount = Math.max(
+        0,
+        Math.min(count, MAX_KEYS - useGameStore.getState().keysCollected, KEY_SPAWN_POINTS.length)
+      );
+      setKeys(createSpawnSet(spawnCount));
+      if (prev === 'menu' || prev === 'gameover') {
+        resetKeys();
+      }
     }, 0);
+    prevGameStateRef.current = gameState;
     return () => window.clearTimeout(timer);
   }, [count, gameState, resetKeys, itemResetTrigger]);
 
   useEffect(() => {
-    setTotalKeys(keys.length);
+    // totalKeys represents the total remaining in the level = on-map + held
+    setTotalKeys(keys.length + keysCollected);
     return () => {
       setTotalKeys(0);
       resetKeys();
     };
-  }, [keys.length, resetKeys, setTotalKeys]);
+  }, [keys.length, keysCollected, resetKeys, setTotalKeys]);
 
   const handlePickup = useCallback(
     (id: string) => {
