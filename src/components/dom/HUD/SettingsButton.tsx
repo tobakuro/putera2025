@@ -1,5 +1,6 @@
+/* eslint-disable @next/next/no-img-element */
 import React from 'react';
-import Image from 'next/image';
+// Use native img for HUD icons
 
 export default function SettingsButton() {
   const panelStyle: React.CSSProperties = {
@@ -28,12 +29,16 @@ export default function SettingsButton() {
             justifyContent: 'center',
           }}
         >
-          <Image
+          <img
             src="/textures/2D_UI/設定＿なくてもいい（ゲーム中断）.png"
             alt="settings"
-            width={36}
-            height={36}
-            style={{ height: 36, maxWidth: '100%', display: 'block' }}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 6,
+              objectFit: 'contain',
+              display: 'block',
+            }}
           />
         </button>
       </div>

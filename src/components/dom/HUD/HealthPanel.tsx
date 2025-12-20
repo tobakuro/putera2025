@@ -1,5 +1,6 @@
+/* eslint-disable @next/next/no-img-element */
 import React, { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
+// Use native img for HUD icons to avoid next/image issues
 import useGameStore from '../../../stores/useGameStore';
 
 export default function HealthPanel() {
@@ -82,24 +83,33 @@ export default function HealthPanel() {
           <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 6 }}>stage: {stageId}</div>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Image
+          <img
             src="/textures/2D_UI/ライフ＿プレイヤー体力.png"
             alt="life"
-            width={28}
-            height={28}
-            style={{ height: 28, maxWidth: '100%', display: 'block' }}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 6,
+              objectFit: 'contain',
+              display: 'block',
+            }}
           />
           <div>
             <div>
               HP: {hpBar} {hpPercent}%
             </div>
             <div style={{ marginTop: 6 }}>
-              <Image
+              <img
                 src="/textures/2D_UI/タイム＿ゲームタイム.png"
                 alt="time"
-                width={18}
-                height={18}
-                style={{ height: 18, verticalAlign: 'middle', marginRight: 8, maxWidth: '100%' }}
+                style={{
+                  display: 'inline-block',
+                  width: 18,
+                  height: 18,
+                  verticalAlign: 'middle',
+                  marginRight: 8,
+                  objectFit: 'contain',
+                }}
               />
               <span>{timeText}</span>
             </div>

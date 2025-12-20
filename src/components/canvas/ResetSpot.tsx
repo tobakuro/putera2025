@@ -18,6 +18,9 @@ export default function ResetSpot({ position = [0, 0.1, 0] }: ResetSpotProps) {
 
   // クールタイムのカウントダウン
   useFrame((_, delta) => {
+    // ゲームが再生中でなければ時間経過やアニメを止める
+    if (useGameStore.getState().gameState !== 'playing') return;
+
     if (cooldown > 0) {
       setCooldown((prev) => Math.max(0, prev - delta));
     }

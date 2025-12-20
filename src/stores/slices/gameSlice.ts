@@ -8,7 +8,12 @@ export const createGameSlice = (set: SetStateType): Partial<State> => ({
   setGameState: (gameState: 'menu' | 'playing' | 'paused' | 'gameover') => set({ gameState }),
 
   stageId: 'stage0',
-  setStageId: (stageId: 'stage0' | 'stage1') => set({ stageId, keysCollected: 0, totalKeys: 0 }),
+  setStageId: (stageId: 'stage0' | 'stage1' | 'stageL') =>
+    set({ stageId, keysCollected: 0, totalKeys: 0 }),
+
+  // level は 1..4 の整数
+  level: 1,
+  setLevel: (level: number) => set(() => ({ level: Math.max(1, Math.min(4, Math.floor(level))) })),
 
   score: 0,
   addScore: (n: number) => set((s: State) => ({ score: s.score + n })),
@@ -16,12 +21,17 @@ export const createGameSlice = (set: SetStateType): Partial<State> => ({
 
   playerHP: 100,
   maxHP: 100,
-  takeDamage: (damage: number) =>
+  takeDamage: (damage: number, reason?: string, time?: number) =>
     set((s: State) => {
       const newHP = Math.max(0, s.playerHP - damage);
+      const isDead = newHP <= 0;
       return {
         playerHP: newHP,
-        gameState: newHP <= 0 ? 'gameover' : s.gameState,
+        gameState: isDead ? 'gameover' : s.gameState,
+        // 死亡時の情報を保存
+        deathReason: isDead ? (reason ?? 'Unknown') : (s.deathReason ?? null),
+        deathTime: isDead ? (time ?? null) : (s.deathTime ?? null),
+        deathKeys: isDead ? (s.keysCollected ?? 0) : (s.deathKeys ?? null),
       } as Partial<State>;
     }),
   heal: (amount: number) =>
@@ -48,6 +58,9 @@ export const createGameSlice = (set: SetStateType): Partial<State> => ({
           lastKeySpawns: [],
           lastHeartSpawns: [],
           respawnToken: 0,
+          deathReason: null,
+          deathTime: null,
+          deathKeys: null,
           cameraMode: 'third',
         }) as Partial<State>
     );

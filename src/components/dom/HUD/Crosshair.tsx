@@ -1,6 +1,5 @@
+/* eslint-disable @next/next/no-img-element */
 import React from 'react';
-import Image from 'next/image';
-
 export default function Crosshair() {
   return (
     <div
@@ -12,12 +11,15 @@ export default function Crosshair() {
         pointerEvents: 'none',
       }}
     >
-      <Image
+      <img
         src="/textures/2D_UI/エイムカーソル＿常に中央表示.png"
         alt="crosshair"
-        width={32}
-        height={32}
-        style={{ height: 32, maxWidth: '100%', display: 'block' }}
+        style={{
+          width: 36,
+          height: 36,
+          display: 'block',
+          pointerEvents: 'none',
+        }}
       />
     </div>
   );

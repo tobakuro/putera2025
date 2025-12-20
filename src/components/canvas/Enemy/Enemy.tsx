@@ -21,6 +21,7 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
   const updateEnemyPosition = useGameStore((s) => s.updateEnemyPosition);
   const removeEnemy = useGameStore((s) => s.removeEnemy);
   const takeDamage = useGameStore((s) => s.takeDamage);
+  const gameState = useGameStore((s) => s.gameState);
 
   const stats = ENEMY_STATS[enemy.type];
   const ATTACK_COOLDOWN = 1.0; // 攻撃間隔（秒）
@@ -33,6 +34,8 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
   }, [enemy.health, enemy.id, removeEnemy]);
 
   useFrame((state) => {
+    // ゲームが再生中でなければ敵のAIを停止
+    if (gameState !== 'playing') return;
     if (!bodyRef.current || !modelGroupRef.current) return;
 
     const body = bodyRef.current;
@@ -62,7 +65,8 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
 
         // プレイヤーにダメージを与える（クールダウン付き）
         if (currentTime - lastAttackTimeRef.current >= ATTACK_COOLDOWN) {
-          takeDamage(stats.damage);
+          // 攻撃を受けたときは原因とゲーム内時刻を渡す
+          takeDamage(stats.damage, `Enemy:${enemy.type}`, currentTime);
           lastAttackTimeRef.current = currentTime;
         }
       } else {
