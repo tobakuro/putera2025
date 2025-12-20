@@ -7,6 +7,7 @@ import Player from './Player';
 import Level from './Level';
 import KeySpawner from './KeySpawner';
 import HeartSpawner from './HeartSpawner';
+import EnemyManager from './Enemy/EnemyManager';
 import ResetSpot from './ResetSpot';
 import {
   AMBIENT_INTENSITY,
@@ -76,6 +77,10 @@ export default function Scene() {
 
         <KeySpawner />
         <HeartSpawner />
+
+        {/* 敵システム */}
+        <EnemyManager />
+
         <ResetSpot position={[17.5, 0.1, 0]} />
         {/* ContactShadows を追加して接地部の細かい影を表現（凹凸の密度感を改善） */}
         <ContactShadows

@@ -26,7 +26,6 @@ export default function Player() {
   const setPlayerPosition = useGameStore((s) => s.setPlayerPosition);
   const spawn = useMemo(() => STAGE_SPAWN[stageId] ?? ([0, 5, 0] as const), [stageId]);
 
-
   // カメラの回転角度
   const rotationRef = useRef({ yaw: 0, pitch: 0 });
   // モデルの参照（見た目の回転をここで制御する）
@@ -217,6 +216,7 @@ export default function Player() {
         position={spawn}
         enabledRotations={[false, false, false]}
         linearDamping={0.5}
+        userData={{ isPlayer: true }}
       >
         {/* モデルは縮小して表示。コライダー中心に合わせて位置を調整 */}
         <group

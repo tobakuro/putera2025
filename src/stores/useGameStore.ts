@@ -1,8 +1,17 @@
 import { create } from 'zustand';
+import type { EnemyType } from '../constants/enemies';
 
 export type GameState = 'menu' | 'playing' | 'paused' | 'gameover';
 
 export type StageId = 'stage0' | 'stage1';
+
+// 敵の個体情報
+export interface Enemy {
+  id: string;
+  type: EnemyType;
+  health: number;
+  position: [number, number, number];
+}
 
 type State = {
   // ゲーム状態
@@ -42,6 +51,13 @@ type State = {
   collectKey: () => void;
   resetKeys: () => void;
 
+  // 敵管理
+  enemies: Enemy[];
+  addEnemy: (enemy: Enemy) => void;
+  removeEnemy: (id: string) => void;
+  updateEnemyHealth: (id: string, health: number) => void;
+  updateEnemyPosition: (id: string, position: [number, number, number]) => void;
+  clearEnemies: () => void;
   // アイテムリセットトリガー（リセットスポット用）
   itemResetTrigger: number;
   triggerItemReset: () => void;
@@ -64,6 +80,7 @@ const INITIAL_STATE = {
   reserveAmmo: 90,
   keysCollected: 0,
   totalKeys: 1,
+  enemies: [] as Enemy[],
   itemResetTrigger: 0,
   playerPosition: { x: 0, y: 0, z: 0 },
 };
@@ -150,6 +167,25 @@ export const useGameStore = create<State>((set) => ({
       const stageId = preserveStage ? s.stageId : DEFAULT_STAGE_ID;
       return { ...INITIAL_STATE, stageId } as State;
     }),
+  // 敵管理
+  addEnemy: (enemy) =>
+    set((s) => ({
+      enemies: [...s.enemies, enemy],
+    })),
+  removeEnemy: (id) =>
+    set((s) => ({
+      enemies: s.enemies.filter((e) => e.id !== id),
+    })),
+  updateEnemyHealth: (id, health) =>
+    set((s) => ({
+      enemies: s.enemies.map((e) => (e.id === id ? { ...e, health } : e)),
+    })),
+  updateEnemyPosition: (id, position) =>
+    set((s) => ({
+      enemies: s.enemies.map((e) => (e.id === id ? { ...e, position } : e)),
+    })),
+  clearEnemies: () => set({ enemies: [] }),
+
   // リスポーン: トークンを増やしHPを全回復する
   respawnToken: 0,
   requestRespawn: () =>
