@@ -13,6 +13,9 @@ export default function Page() {
   // メニュー状態ならメニューを表示。Startで gameState を 'playing' にする。
   if (gameState === 'menu') return <Menu />;
 
+  // ゲームオーバー状態ならメニューに戻す（GameOverコンポーネントの代わり）
+  if (gameState === 'gameover') return <Menu />;
+
   return (
     <>
       <Scene />
