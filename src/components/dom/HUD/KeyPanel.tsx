@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import React, { useEffect, useRef } from 'react';
 // Use native img to avoid next/image optimization issues for local UI assets
 import useGameStore from '../../../stores/useGameStore';
@@ -43,22 +44,17 @@ export default function KeyPanel() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div
-            id="placeholder-key-icon"
+          <img
+            src="/textures/2D_UI/鍵＿所持状況確認.png"
+            alt="key"
             style={{
               width: 24,
               height: 24,
-              background: '#ddd',
               borderRadius: 4,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#666',
-              fontSize: 10,
+              objectFit: 'contain',
+              display: 'block',
             }}
-          >
-            Key
-          </div>
+          />
           <div>
             <div style={{ fontSize: 14 }}>
               鍵: {keysCollected} / {totalKeys}

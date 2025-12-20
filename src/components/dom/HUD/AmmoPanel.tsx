@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import React from 'react';
 // Use native img for HUD icons
 import useGameStore from '../../../stores/useGameStore';
@@ -20,21 +21,17 @@ export default function AmmoPanel() {
     <div style={{ position: 'absolute', left: 16, bottom: 16 }}>
       <div style={panelStyle}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div
-            id="placeholder-ammo-icon"
+          <img
+            src="/textures/2D_UI/弾丸＿弾数表示.png"
+            alt="ammo"
             style={{
               width: 40,
               height: 40,
-              background: '#efefef',
               borderRadius: 6,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#666',
+              objectFit: 'contain',
+              display: 'block',
             }}
-          >
-            Ammo
-          </div>
+          />
           <div>
             <div>装備済みの銃アイコン</div>
             <div style={{ marginTop: 6 }}>

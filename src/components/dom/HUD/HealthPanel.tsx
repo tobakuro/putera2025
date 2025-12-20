@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import React, { useEffect, useRef, useState } from 'react';
 // Use native img for HUD icons to avoid next/image issues
 import useGameStore from '../../../stores/useGameStore';
@@ -82,43 +83,34 @@ export default function HealthPanel() {
           <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 6 }}>stage: {stageId}</div>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div
-            id="placeholder-life-icon"
+          <img
+            src="/textures/2D_UI/ライフ＿プレイヤー体力.png"
+            alt="life"
             style={{
               width: 34,
               height: 34,
-              background: '#eee',
               borderRadius: 6,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#666',
+              objectFit: 'contain',
+              display: 'block',
             }}
-          >
-            Life
-          </div>
+          />
           <div>
             <div>
               HP: {hpBar} {hpPercent}%
             </div>
             <div style={{ marginTop: 6 }}>
-              <span
-                id="placeholder-time-icon"
+              <img
+                src="/textures/2D_UI/タイム＿ゲームタイム.png"
+                alt="time"
                 style={{
                   display: 'inline-block',
                   width: 18,
                   height: 18,
-                  background: '#eee',
-                  borderRadius: 4,
                   verticalAlign: 'middle',
                   marginRight: 8,
-                  textAlign: 'center',
-                  color: '#666',
-                  fontSize: 10,
+                  objectFit: 'contain',
                 }}
-              >
-                T
-              </span>
+              />
               <span>{timeText}</span>
             </div>
             <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>座標: ({posText})</div>

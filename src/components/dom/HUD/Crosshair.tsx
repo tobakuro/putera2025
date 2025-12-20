@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import React from 'react';
 export default function Crosshair() {
   return (
@@ -10,21 +11,16 @@ export default function Crosshair() {
         pointerEvents: 'none',
       }}
     >
-      <div
-        id="placeholder-crosshair"
+      <img
+        src="/textures/2D_UI/エイムカーソル＿常に中央表示.png"
+        alt="crosshair"
         style={{
           width: 36,
           height: 36,
-          borderRadius: 18,
-          background: 'rgba(0,0,0,0.08)',
-          border: '2px solid rgba(0,0,0,0.12)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          display: 'block',
+          pointerEvents: 'none',
         }}
-      >
-        <div style={{ width: 8, height: 8, background: '#666', borderRadius: 4 }} />
-      </div>
+      />
     </div>
   );
 }

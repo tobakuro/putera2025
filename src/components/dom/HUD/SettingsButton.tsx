@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import React from 'react';
 // Use native img for HUD icons
 
@@ -28,21 +29,17 @@ export default function SettingsButton() {
             justifyContent: 'center',
           }}
         >
-          <div
-            id="placeholder-settings-icon"
+          <img
+            src="/textures/2D_UI/設定＿なくてもいい（ゲーム中断）.png"
+            alt="settings"
             style={{
               width: 40,
               height: 40,
-              background: '#ececec',
               borderRadius: 6,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#666',
+              objectFit: 'contain',
+              display: 'block',
             }}
-          >
-            Set
-          </div>
+          />
         </button>
       </div>
     </div>
