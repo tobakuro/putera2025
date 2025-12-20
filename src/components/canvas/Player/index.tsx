@@ -31,9 +31,41 @@ export default function Player() {
   // 表示状態をレンダー側に渡すための state
   const [isMoving, setIsMoving] = useState(false);
   const [headPitchState, setHeadPitchState] = useState(0);
+  const footstepAudioRef = useRef<HTMLAudioElement | null>(null);
   // ジャンプ押下の立ち上がり検出用
   const prevJumpRef = useRef(false);
   const raycasterRef = useRef(new THREE.Raycaster());
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const audio = new Audio('/sounds/footstep.mp3');
+    audio.loop = true;
+    audio.volume = 0.07;
+    footstepAudioRef.current = audio;
+    return () => {
+      audio.pause();
+      footstepAudioRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const audio = footstepAudioRef.current;
+    if (!audio) return undefined;
+
+    if (isMoving) {
+      audio.play().catch(() => {
+        // 自動再生制限で失敗するケースは握りつぶす
+      });
+    } else {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+
+    return () => {
+      audio.pause();
+      audio.currentTime = 0;
+    };
+  }, [isMoving]);
 
   // ポインターロックの設定
   useEffect(() => {
@@ -131,6 +163,7 @@ export default function Player() {
 
   return (
     <RigidBody
+      name="player"
       ref={playerRef}
       colliders="ball"
       mass={1}
