@@ -8,6 +8,7 @@ import Level from './Level';
 import KeySpawner from './KeySpawner';
 import HeartSpawner from './HeartSpawner';
 import EnemyManager from './Enemy/EnemyManager';
+import ResetSpot from './ResetSpot';
 import {
   AMBIENT_INTENSITY,
   DIRECTIONAL_LIGHT,
@@ -80,6 +81,7 @@ export default function Scene() {
         {/* 敵システム */}
         <EnemyManager />
 
+        <ResetSpot position={[17.5, 0.1, 0]} />
         {/* ContactShadows を追加して接地部の細かい影を表現（凹凸の密度感を改善） */}
         <ContactShadows
           position={CONTACT_SHADOWS.position}
@@ -89,7 +91,6 @@ export default function Scene() {
           blur={CONTACT_SHADOWS.blur}
           far={CONTACT_SHADOWS.far}
         />
-
         {/* テスト用の立方体 */}
         <RigidBody colliders="cuboid">
           <mesh position={[0, 5, 0]} castShadow>
