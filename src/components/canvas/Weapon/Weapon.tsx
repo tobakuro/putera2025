@@ -20,12 +20,12 @@ type BulletData = {
 type WeaponProps = {
   playerRef: React.RefObject<RapierRigidBody | null>;
   isShooting: boolean;
-  cameraRotation: { yaw: number; pitch: number };
+  cameraRotationRef: React.RefObject<{ yaw: number; pitch: number }>;
 };
 
 let bulletIdCounter = 0;
 
-export default function Weapon({ playerRef, isShooting, cameraRotation }: WeaponProps) {
+export default function Weapon({ playerRef, isShooting, cameraRotationRef }: WeaponProps) {
   const { camera } = useThree();
   const bullets = useRef<BulletData[]>([]);
   const lastShotTime = useRef(0);
@@ -53,11 +53,13 @@ export default function Weapon({ playerRef, isShooting, cameraRotation }: Weapon
   });
 
   const shoot = (currentTime: number) => {
-    if (!playerRef.current) return;
+    if (!playerRef.current || !cameraRotationRef.current) return;
 
     // カメラの向きから発射方向を計算
     const direction = new THREE.Vector3(0, 0, -1);
-    direction.applyEuler(new THREE.Euler(cameraRotation.pitch, cameraRotation.yaw, 0, 'YXZ'));
+    direction.applyEuler(
+      new THREE.Euler(cameraRotationRef.current.pitch, cameraRotationRef.current.yaw, 0, 'YXZ')
+    );
     direction.normalize();
 
     // 弾の初期位置はカメラ位置から少し前方にしてます
