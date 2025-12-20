@@ -76,6 +76,9 @@ export type State = {
 
   // ゲームリセット
   resetGame: (preserveStage?: boolean) => void;
+  // レベル選択 (1-4)
+  level: number;
+  setLevel: (level: number) => void;
   // リスポーン制御: トークンをインクリメントしてプレイヤーに通知
   respawnToken: number;
   requestRespawn: () => void;

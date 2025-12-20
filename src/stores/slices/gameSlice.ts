@@ -10,6 +10,10 @@ export const createGameSlice = (set: SetStateType): Partial<State> => ({
   stageId: 'stage0',
   setStageId: (stageId: 'stage0' | 'stage1') => set({ stageId, keysCollected: 0, totalKeys: 0 }),
 
+  // level は 1..4 の整数
+  level: 1,
+  setLevel: (level: number) => set(() => ({ level: Math.max(1, Math.min(4, Math.floor(level))) })),
+
   score: 0,
   addScore: (n: number) => set((s: State) => ({ score: s.score + n })),
   resetScore: () => set({ score: 0 }),

@@ -8,6 +8,7 @@ export default function Menu() {
   const stageId = useGameStore((s) => s.stageId);
   const setStageId = useGameStore((s) => s.setStageId);
   const resetGame = useGameStore((s) => s.resetGame);
+  const setLevel = useGameStore((s) => s.setLevel);
 
   const [step, setStep] = useState<'title' | 'stage' | 'level'>('title');
   const [localStage, setLocalStage] = useState(stageId);
@@ -133,11 +134,11 @@ export default function Menu() {
         <>
           <h2 style={{ margin: 0 }}>レベル選択 — {localStage}</h2>
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            {[1, 2, 3].map((lv) => (
+            {[1, 2, 3, 4].map((lv) => (
               <button
                 key={lv}
                 onClick={() => {
-                  // 将来的にレベル情報を store に入れる場合はここで反映
+                  setLevel(lv);
                   onStartGame();
                 }}
                 style={{ padding: '10px 14px', borderRadius: 8 }}
