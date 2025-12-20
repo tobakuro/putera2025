@@ -7,6 +7,7 @@ import Player from './Player';
 import Level from './Level';
 import KeySpawner from './KeySpawner';
 import HeartSpawner from './HeartSpawner';
+import EnemyManager from './Enemy/EnemyManager';
 import {
   AMBIENT_INTENSITY,
   DIRECTIONAL_LIGHT,
@@ -75,6 +76,9 @@ export default function Scene() {
 
         <KeySpawner />
         <HeartSpawner />
+
+        {/* 敵システム */}
+        <EnemyManager />
 
         {/* ContactShadows を追加して接地部の細かい影を表現（凹凸の密度感を改善） */}
         <ContactShadows
