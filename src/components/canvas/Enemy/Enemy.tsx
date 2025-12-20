@@ -20,6 +20,7 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
   const lastAttackTimeRef = useRef<number>(0);
   const lastMovingRef = useRef<boolean>(false);
   const lastPosSyncTimeRef = useRef<number>(0);
+  const lastAiUpdateRef = useRef<number>(0);
   const [isMoving, setIsMoving] = useState(false);
   const updateEnemyPosition = useGameStore((s) => s.updateEnemyPosition);
   const removeEnemy = useGameStore((s) => s.removeEnemy);
@@ -50,6 +51,26 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
 
     // プレイヤーとの距離を計算
     const distanceToPlayer = currentVec.distanceTo(playerPosition);
+
+    // 更新頻度は距離に応じて間引く
+    //  - 近距離: フル更新
+    //  - 中距離: 低頻度更新 (0.1s)
+    //  - 遠距離: 更に低頻度更新 (0.5s)
+    const FULL_UPDATE_DIST = Math.min(8, stats.detectionRange); // 近距離閾値
+    const MID_UPDATE_DIST = Math.max(15, stats.detectionRange * 0.8); // 中距離閾値
+    const MID_TICK = 0.1;
+    const FAR_TICK = 0.5;
+
+    if (distanceToPlayer <= FULL_UPDATE_DIST) {
+      // 近距離はフル更新
+    } else if (distanceToPlayer <= MID_UPDATE_DIST) {
+      // 中距離は間引き
+      if (currentTime - lastAiUpdateRef.current < MID_TICK) return;
+    } else {
+      // 遠距離は更に間引き
+      if (currentTime - lastAiUpdateRef.current < FAR_TICK) return;
+    }
+    lastAiUpdateRef.current = currentTime;
 
     let moving = false;
 

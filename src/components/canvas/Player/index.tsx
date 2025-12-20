@@ -17,6 +17,7 @@ import {
   PLAYER_HALF_HEIGHT,
   PLAYER_RADIUS,
   PLAYER_BODY_LENGTH,
+  GROUNDED_EPS,
 } from '../../../constants/player';
 import { STAGE_SPAWN } from '../../../constants/stages';
 import * as THREE from 'three';
@@ -57,6 +58,11 @@ export default function Player() {
   // ジャンプ押下の立ち上がり検出用
   const prevJumpRef = useRef(false);
   const groundedCountRef = useRef(0);
+  // 見た目のモデルを縮小する倍率（スケーリング時の床合わせに使う）
+  const MODEL_SCALE = 1 / 3;
+  // モデルの足元が埋まる場合の微調整オフセット（正の値で上に上がる）
+  // 調整幅はメートル単位で小さく設定（例: 0.12m）
+  const MODEL_FEET_OFFSET = 0.3;
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -163,7 +169,9 @@ export default function Player() {
     // setLinvel で速度をリセットし、位置をスポーン位置に即時移動する
     try {
       playerRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
-      playerRef.current.setTranslation({ x: spawn[0], y: spawn[1], z: spawn[2] }, true);
+      // 少し上に上げてスポーン（地形との干渉で埋まるのを防ぐ）
+      // ここは微調整のしやすい値にしておく
+      playerRef.current.setTranslation({ x: spawn[0], y: spawn[1] + 0.35, z: spawn[2] }, true);
     } catch (e) {
       // ランタイムで API が違う場合に備えて安全に握りつぶす
       // （多くの環境では setTranslation が利用可能です）
@@ -172,6 +180,8 @@ export default function Player() {
     }
     // ジャンプ検出のフラグをクリア
     prevJumpRef.current = false;
+    // 接地カウントは明示的にクリア
+    groundedCountRef.current = 0;
   }, [respawnToken, spawn]);
 
   // 毎フレームの更新
@@ -202,12 +212,16 @@ export default function Player() {
     setIsMoving(direction.length() > 0.01);
     setHeadPitchState(rotationRef.current.pitch);
 
-    // 接地判定: Rapierの足元センサーで判定（毎フレームRaycastしない）
-    const grounded = groundedCountRef.current > 0;
+    // 接地判定: 足元センサーのカウント、もしくは垂直速度が小さい場合は接地とみなす
+    const groundedBySensor = groundedCountRef.current > 0;
+    const groundedByVel = Math.abs(velocity.y) < GROUNDED_EPS;
+    const grounded = groundedBySensor || groundedByVel;
 
     // 立ち上がり検出でジャンプを発火（押し始めのみ）
     const rising = keys.jump && !prevJumpRef.current;
     if (rising && grounded) {
+      // ジャンプ時は既存の垂直速度をリセットしてからインパルスを与える
+      playerRef.current.setLinvel({ x: velocity.x, y: 0, z: velocity.z }, true);
       playerRef.current.applyImpulse({ x: 0, y: JUMP_FORCE, z: 0 }, true);
     }
     prevJumpRef.current = keys.jump;
@@ -264,22 +278,35 @@ export default function Player() {
         {/* 人型に適したカプセルコライダー（縦長の円柱＋半球） */}
         {/* args: [halfHeight, radius] - カプセルの中心円柱の半分の高さと半径 */}
         <CapsuleCollider
+          // args: [halfHeight, radius] - カプセル中心円柱の半高さと半径
           args={[PLAYER_BODY_LENGTH / 2, PLAYER_RADIUS]}
+          // カプセルはプレイヤー基準で上に置く（ボディの原点は地面近傍）
           position={[0, PLAYER_HALF_HEIGHT, 0]}
         />
 
         {/* 足元センサー（接地判定用）。地形は userData.type='ground' を付与済み */}
         <CuboidCollider
+          // 小さめの薄いセンサーを足元に置く
           args={[PLAYER_RADIUS * 0.9, 0.08, PLAYER_RADIUS * 0.9]}
           position={[0, 0.05, 0]}
           sensor
           onIntersectionEnter={({ other }) => {
-            const t = other?.rigidBodyObject?.userData?.type;
+            // Rapier のイベントでは other に rigidBodyObject または colliderObject のいずれかが入ることがある
+            // 可能な取得パスを順に試し、ground タグを探す
+            const t =
+              other?.rigidBodyObject?.userData?.type ??
+              other?.colliderObject?.userData?.type ??
+              other?.colliderObject?.parent?.userData?.type;
+
             if (t !== 'ground') return;
             groundedCountRef.current += 1;
           }}
           onIntersectionExit={({ other }) => {
-            const t = other?.rigidBodyObject?.userData?.type;
+            const t =
+              other?.rigidBodyObject?.userData?.type ??
+              other?.colliderObject?.userData?.type ??
+              other?.colliderObject?.parent?.userData?.type;
+
             if (t !== 'ground') return;
             groundedCountRef.current = Math.max(0, groundedCountRef.current - 1);
           }}
@@ -287,8 +314,9 @@ export default function Player() {
         {/* モデルは縮小して表示。コライダー中心に合わせて位置を調整 */}
         <group
           ref={modelRef}
-          position={[0, -PLAYER_HALF_HEIGHT * (1 / 3), 0]}
-          scale={[1 / 3, 1 / 3, 1 / 3]}
+          // モデルを少し上に持ち上げて足の埋まりを解消
+          position={[0, -PLAYER_HALF_HEIGHT * MODEL_SCALE + MODEL_FEET_OFFSET, 0]}
+          scale={[MODEL_SCALE, MODEL_SCALE, MODEL_SCALE]}
         >
           <PlayerModel play={isMoving} headPitch={headPitchState} />
         </group>
