@@ -53,7 +53,7 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
   const gameState = useGameStore((s) => s.gameState);
   const prevGameStateRef = useRef(gameState);
 
-  // Ensure we don't spawn more keys than allowed by DEFAULT_KEY_COUNT when
+  // Ensure we don't spawn more keys than allowed by MAX_KEYS when
   // combined with the player's currently held keys.
   const effectiveSpawnCount = Math.max(
     0,
