@@ -8,6 +8,21 @@ import React from 'react';
 import { useGraph } from '@react-three/fiber';
 import { useGLTF, useAnimations } from '@react-three/drei';
 import { GLTF, SkeletonUtils } from 'three-stdlib';
+import { WALK_SPEED } from '../../../constants/player';
+
+// Minimal GroupProps shape to avoid relying on the global JSX namespace.
+export type GroupProps = {
+  position?: THREE.Vector3 | [number, number, number] | number;
+  rotation?: THREE.Euler | [number, number, number];
+  scale?: THREE.Vector3 | [number, number, number] | number;
+  /** 移動中なら歩行モーションを再生 */
+  play?: boolean;
+  /** 今は未使用（将来の頭ピッチ反映用） */
+  headPitch?: number;
+  children?: React.ReactNode;
+  dispose?: unknown;
+  [key: string]: unknown;
+};
 
 type ActionName = 'アーマチュアアクション';
 
@@ -26,17 +41,62 @@ type GLTFResult = GLTF & {
   animations: GLTFAction[];
 };
 
-export function Model(props: JSX.IntrinsicElements['group']) {
+export function Model(props: GroupProps) {
+  const { play, headPitch, ...groupProps } = props;
   // useRef must be initialized; allow null until mounted
   const group = React.useRef<THREE.Group | null>(null);
-  const { scene, animations } = useGLTF('/hitogata_move.glb');
+  const { scene, animations } = useGLTF('/models/3D/glb/hitogata/hitogata_move.glb');
   const clone = React.useMemo(() => SkeletonUtils.clone(scene), [scene]);
   // useGraph returns a generic map; cast via unknown to satisfy TS for now
   const { nodes, materials } = useGraph(clone) as unknown as GLTFResult;
   // cast group ref to a looser Object3D ref for useAnimations
   const { actions } = useAnimations(animations, group as React.RefObject<THREE.Object3D>);
+
+  // 再生/停止の切り替え
+  React.useEffect(() => {
+    const action = actions?.['アーマチュアアクション'];
+    if (!action) return;
+
+    // ループ前提の歩行モーション
+    // 再生速度倍率: constants/player.ts の WALK_SPEED で調整
+    action.setEffectiveTimeScale(WALK_SPEED);
+
+    if (play) {
+      // 歩行中: 先頭から再生し続ける
+      action.setLoop(THREE.LoopRepeat, Infinity);
+      action.reset();
+      action.setEffectiveWeight(1);
+      action.setEffectiveTimeScale(WALK_SPEED);
+      action.fadeIn(0.15);
+      action.play();
+    } else {
+      // 静止中: 歩行アニメの"終了状態"(最終フレーム)で固める
+      // NOTE:
+      // `react-hooks/immutability` が hook 由来の action へのプロパティ代入を禁止するため、
+      // ここだけルールを緩めて three.js の標準的な固定方法を使う。
+      /* eslint-disable react-hooks/immutability */
+      action.setLoop(THREE.LoopOnce, 1);
+      action.setEffectiveWeight(1);
+      action.setEffectiveTimeScale(WALK_SPEED);
+      action.reset();
+      action.play();
+      // 最終フレームに固定
+      action.clampWhenFinished = true;
+      action.time = Math.max(0, action.getClip().duration - 1e-3);
+      action.paused = true;
+      /* eslint-enable react-hooks/immutability */
+    }
+
+    return () => {
+      // コンポーネント破棄時に停止
+      action.stop();
+    };
+  }, [actions, play]);
+
+  // 将来: headPitch をボーンへ反映する用（現状は未使用）
+  void headPitch;
   return (
-    <group ref={group} {...props} dispose={null}>
+    <group ref={group} {...groupProps} dispose={null}>
       <group name="Scene">
         <group name="アーマチュア">
           <primitive object={nodes.Root} />
@@ -52,4 +112,4 @@ export function Model(props: JSX.IntrinsicElements['group']) {
   );
 }
 
-useGLTF.preload('/hitogata_move.glb');
+useGLTF.preload('/models/3D/glb/hitogata/hitogata_move.glb');
