@@ -92,7 +92,6 @@ export default function Menu() {
                   cursor: 'pointer',
                 }}
               />
-
               <button
                 aria-label="Level-2"
                 onClick={() => {

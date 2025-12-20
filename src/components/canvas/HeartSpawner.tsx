@@ -137,7 +137,7 @@ export default function HeartSpawner({ count = DEFAULT_HEART_COUNT }: HeartSpawn
   return (
     <group>
       {hearts.map((heart) => (
-        <HeartInstance key={heart.id} data={heart} onCollect={handlePickup} />
+        <HeartInstance key={heart.id} data={heart} onCollect={handlePickup} gameState={gameState} />
       ))}
     </group>
   );
@@ -146,15 +146,16 @@ export default function HeartSpawner({ count = DEFAULT_HEART_COUNT }: HeartSpawn
 type HeartInstanceProps = {
   data: HeartSpawn;
   onCollect: (id: string) => void;
+  gameState: string;
 };
 
-function HeartInstance({ data, onCollect }: HeartInstanceProps) {
+function HeartInstance({ data, onCollect, gameState }: HeartInstanceProps) {
   const { id, position, collected } = data;
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame(({ clock }) => {
     // ゲームが再生中でなければアニメーション停止
-    if (useGameStore.getState().gameState !== 'playing') return;
+    if (gameState !== 'playing') return;
     if (!groupRef.current || collected) return;
     const t = clock.getElapsedTime();
     groupRef.current.rotation.y = t * 0.7;

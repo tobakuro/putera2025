@@ -120,8 +120,11 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
   const prevGameStateRef = useRef(gameState);
   const stageId = useGameStore((s) => s.stageId);
 
+  // Maze (stage2) should only spawn a single key
+  const effectiveCount = stageId === 'stage2' ? 1 : count;
+
   // Desired number to spawn considering player's held keys
-  const desiredCount = Math.max(0, Math.min(count, MAX_KEYS - keysCollected));
+  const desiredCount = Math.max(0, Math.min(effectiveCount, MAX_KEYS - keysCollected));
 
   const spawnPoints = useMemo(
     () => getSpawnPointsForStage(stageId, desiredCount),
@@ -146,7 +149,7 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
       const pts = getSpawnPointsForStage(stageId, desiredCount);
       const spawnCount = Math.max(
         0,
-        Math.min(count, MAX_KEYS - useGameStore.getState().keysCollected, pts.length)
+        Math.min(effectiveCount, MAX_KEYS - useGameStore.getState().keysCollected, pts.length)
       );
       setKeys(createSpawnSet(spawnCount, pts));
       // publish to store for hearts to avoid
@@ -157,12 +160,17 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
     }, 0);
     prevGameStateRef.current = gameState;
     return () => window.clearTimeout(timer);
-  }, [count, gameState, resetKeys, itemResetTrigger, stageId, desiredCount]);
+  }, [count, gameState, resetKeys, itemResetTrigger, stageId, desiredCount, effectiveCount]);
 
   // Update total keys whenever map/held counts change
   useEffect(() => {
-    setTotalKeys(keys.length + keysCollected);
-  }, [keys.length, keysCollected, setTotalKeys]);
+    if (stageId === 'stage2') {
+      // Maze requires only one key
+      setTotalKeys(effectiveCount);
+    } else {
+      setTotalKeys(keys.length + keysCollected);
+    }
+  }, [keys.length, keysCollected, setTotalKeys, stageId, effectiveCount]);
 
   // On unmount (leaving the spawner), reset totals and held keys
   useEffect(() => {
@@ -183,7 +191,7 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
   return (
     <group>
       {keys.map((key) => (
-        <KeyInstance key={key.id} data={key} onCollect={handlePickup} />
+        <KeyInstance key={key.id} data={key} onCollect={handlePickup} gameState={gameState} />
       ))}
     </group>
   );
@@ -192,15 +200,16 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
 type KeyInstanceProps = {
   data: KeySpawn;
   onCollect: (id: string) => void;
+  gameState: string;
 };
 
-function KeyInstance({ data, onCollect }: KeyInstanceProps) {
+function KeyInstance({ data, onCollect, gameState }: KeyInstanceProps) {
   const { id, position, collected } = data;
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame(({ clock }) => {
     // ゲームが再生中でなければアニメーション停止
-    if (useGameStore.getState().gameState !== 'playing') return;
+    if (gameState !== 'playing') return;
     if (!groupRef.current || collected) return;
     const t = clock.getElapsedTime();
     groupRef.current.rotation.y = t * 0.9;
@@ -208,12 +217,25 @@ function KeyInstance({ data, onCollect }: KeyInstanceProps) {
   });
 
   const handleEnter = useCallback(
-    ({ other }: { other: { rigidBodyObject?: { name?: string } } }) => {
+    ({ other }: { other?: { rigidBodyObject?: { name?: string } } }) => {
       if (collected) return;
-      if (other.rigidBodyObject?.name !== 'player') return;
-      onCollect(id);
+      // First try the rapier-provided object name check
+      if (other?.rigidBodyObject?.name === 'player') {
+        onCollect(id);
+        return;
+      }
+      // Fallback: compare player position to this key position (robust if rapier event shape differs)
+      const playerPos = useGameStore.getState().playerPosition;
+      if (playerPos) {
+        const dx = playerPos.x - position[0];
+        const dz = playerPos.z - position[2];
+        const dist = Math.hypot(dx, dz);
+        if (dist < 1.5) {
+          onCollect(id);
+        }
+      }
     },
-    [collected, id, onCollect]
+    [collected, id, onCollect, position]
   );
 
   return (

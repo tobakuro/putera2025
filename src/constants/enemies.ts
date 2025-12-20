@@ -49,7 +49,7 @@ export const ENEMY_STATS: Record<EnemyType, EnemyStats> = {
     maxHealth: 1,
     speed: 2.0,
     damage: 30,
-    attackRange: 0,
+    attackRange: 15,
     detectionRange: 35,
     size: [0.8, 1.8, 0.8],
     color: '#ff44ff',

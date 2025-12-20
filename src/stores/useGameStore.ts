@@ -9,7 +9,12 @@ import type { EnemyType } from '../constants/enemies';
 
 export type GameState = 'menu' | 'playing' | 'paused' | 'gameover';
 
-export type StageId = 'stage0' | 'stage1' | 'stageL';
+// ステージ ID
+// - stage0: 既存ステージ
+// - stage1: 既存ステージ
+// - stage2: 迷路ステージ (MazeStage)
+// - stageL: メトロポリス (StageL)
+export type StageId = 'stage0' | 'stage1' | 'stage2' | 'stageL';
 
 // 敵の個体情報
 export interface Enemy {
