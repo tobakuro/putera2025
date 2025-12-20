@@ -27,7 +27,7 @@ export default function Scene() {
       gl={{ antialias: true, powerPreference: 'high-performance' }}
       onCreated={(state) => {
         // use PCF soft shadows for smoother contact shadows
-        state.gl.shadowMap.type = THREE.PCFSoftShadowMap as unknown as THREE.ShadowMapType;
+        state.gl.shadowMap.type = THREE.PCFSoftShadowMap;
         // 型を拡張して安全に physicallyCorrectLights を設定する（any を避ける）
         const gl = state.gl as THREE.WebGLRenderer & { physicallyCorrectLights?: boolean };
         gl.physicallyCorrectLights = true;
