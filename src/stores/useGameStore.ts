@@ -62,6 +62,12 @@ type State = {
   itemResetTrigger: number;
   triggerItemReset: () => void;
 
+  // 最近生成されたスポーン位置（デバッグ / 衝突回避用）
+  lastKeySpawns: { x: number; y: number; z: number }[];
+  setLastKeySpawns: (points: { x: number; y: number; z: number }[]) => void;
+  lastHeartSpawns: { x: number; y: number; z: number }[];
+  setLastHeartSpawns: (points: { x: number; y: number; z: number }[]) => void;
+
   // ゲームリセット
   resetGame: (preserveStage?: boolean) => void;
   // リスポーン制御: トークンをインクリメントしてプレイヤーに通知
@@ -83,19 +89,23 @@ const INITIAL_STATE = {
   enemies: [] as Enemy[],
   itemResetTrigger: 0,
   playerPosition: { x: 0, y: 0, z: 0 },
+  lastKeySpawns: [],
+  lastHeartSpawns: [],
 };
 
 // デフォルトステージID（型安全に参照するため）
 const DEFAULT_STAGE_ID: StageId = 'stage0';
 
 export const useGameStore = create<State>((set) => ({
-  ...INITIAL_STATE,
+  ...(INITIAL_STATE as unknown as State),
 
   // ゲーム状態
   setGameState: (gameState) => set({ gameState }),
 
   // ステージ選択
-  setStageId: (stageId) => set({ stageId }),
+  // ステージ選択（切替時に鍵をリセットして不整合を防ぐ）
+  setStageId: (stageId) =>
+    set(() => ({ stageId, keysCollected: 0, totalKeys: 0 }) as Partial<State>),
 
   // スコア
   addScore: (n) => set((s) => ({ score: s.score + n })),
@@ -160,12 +170,18 @@ export const useGameStore = create<State>((set) => ({
       keysCollected: 0, // 鍵の入手数もリセット
     })),
 
+  // 最近のスポーン位置の記録
+  lastKeySpawns: [],
+  setLastKeySpawns: (points) => set({ lastKeySpawns: points }),
+  lastHeartSpawns: [],
+  setLastHeartSpawns: (points) => set({ lastHeartSpawns: points }),
+
   // ゲームリセット
   // preserveStage=true の場合は現在の stageId を保持してリセットする
   resetGame: (preserveStage = false) =>
     set((s) => {
       const stageId = preserveStage ? s.stageId : DEFAULT_STAGE_ID;
-      return { ...INITIAL_STATE, stageId } as State;
+      return { ...(INITIAL_STATE as unknown as State), stageId } as State;
     }),
   // 敵管理
   addEnemy: (enemy) =>
