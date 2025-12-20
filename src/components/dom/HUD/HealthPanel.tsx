@@ -82,25 +82,43 @@ export default function HealthPanel() {
           <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 6 }}>stage: {stageId}</div>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <img
-            src="/textures/2D_UI/ライフ＿プレイヤー体力.png"
-            alt="life"
-            width={28}
-            height={28}
-            style={{ height: 28, maxWidth: '100%', display: 'block' }}
-          />
+          <div
+            id="placeholder-life-icon"
+            style={{
+              width: 34,
+              height: 34,
+              background: '#eee',
+              borderRadius: 6,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#666',
+            }}
+          >
+            Life
+          </div>
           <div>
             <div>
               HP: {hpBar} {hpPercent}%
             </div>
             <div style={{ marginTop: 6 }}>
-              <img
-                src="/textures/2D_UI/タイム＿ゲームタイム.png"
-                alt="time"
-                width={18}
-                height={18}
-                style={{ height: 18, verticalAlign: 'middle', marginRight: 8, maxWidth: '100%' }}
-              />
+              <span
+                id="placeholder-time-icon"
+                style={{
+                  display: 'inline-block',
+                  width: 18,
+                  height: 18,
+                  background: '#eee',
+                  borderRadius: 4,
+                  verticalAlign: 'middle',
+                  marginRight: 8,
+                  textAlign: 'center',
+                  color: '#666',
+                  fontSize: 10,
+                }}
+              >
+                T
+              </span>
               <span>{timeText}</span>
             </div>
             <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>座標: ({posText})</div>

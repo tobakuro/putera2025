@@ -28,13 +28,21 @@ export default function SettingsButton() {
             justifyContent: 'center',
           }}
         >
-          <img
-            src="/textures/2D_UI/設定＿なくてもいい（ゲーム中断）.png"
-            alt="settings"
-            width={36}
-            height={36}
-            style={{ height: 36, maxWidth: '100%', display: 'block' }}
-          />
+          <div
+            id="placeholder-settings-icon"
+            style={{
+              width: 40,
+              height: 40,
+              background: '#ececec',
+              borderRadius: 6,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#666',
+            }}
+          >
+            Set
+          </div>
         </button>
       </div>
     </div>

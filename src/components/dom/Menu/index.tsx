@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import useGameStore from '../../../stores/useGameStore';
+import StartScreen from './StartScreen';
+import StageSelect from './StageSelect';
 
 export default function Menu() {
   const setGameState = useGameStore((s) => s.setGameState);
@@ -41,7 +43,23 @@ export default function Menu() {
     >
       {step === 'title' && (
         <>
-          <h1 style={{ fontSize: 48, margin: 0 }}>Putera2025</h1>
+          <div
+            id="placeholder-logo"
+            style={{
+              width: 420,
+              height: 140,
+              background: '#e0e0e0',
+              borderRadius: 12,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#333',
+              fontSize: 28,
+              fontWeight: 700,
+            }}
+          >
+            Logo Placeholder
+          </div>
           <p style={{ margin: 0 }}>ようこそ — Start を押して進んでください</p>
           <div style={{ marginTop: 20 }}>
             <button
@@ -65,6 +83,38 @@ export default function Menu() {
       {step === 'stage' && (
         <>
           <h2 style={{ margin: 0 }}>ステージ選択</h2>
+          <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+            <div
+              id="placeholder-stage-stage0"
+              style={{
+                width: 220,
+                height: 140,
+                background: '#e7e7e7',
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#444',
+              }}
+            >
+              Stage0 Preview
+            </div>
+            <div
+              id="placeholder-stage-stage1"
+              style={{
+                width: 220,
+                height: 140,
+                background: '#e7e7e7',
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#444',
+              }}
+            >
+              Stage1 Preview
+            </div>
+          </div>
           <div
             style={{
               display: 'flex',
@@ -133,18 +183,31 @@ export default function Menu() {
       {step === 'level' && (
         <>
           <h2 style={{ margin: 0 }}>レベル選択 — {localStage}</h2>
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
             {[1, 2, 3, 4].map((lv) => (
-              <button
+              <div
                 key={lv}
-                onClick={() => {
-                  setLevel(lv);
-                  onStartGame();
-                }}
-                style={{ padding: '10px 14px', borderRadius: 8 }}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
               >
-                Level {lv}
-              </button>
+                <button
+                  data-level={lv}
+                  onClick={() => {
+                    setLevel(lv);
+                    onStartGame();
+                  }}
+                  style={{
+                    width: 120,
+                    height: 80,
+                    borderRadius: 8,
+                    background: '#eaeaea',
+                    border: '1px dashed #ccc',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ color: '#333', fontWeight: 600 }}>Level {lv}</div>
+                </button>
+                <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>Preview Tile</div>
+              </div>
             ))}
           </div>
 
