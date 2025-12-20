@@ -1,6 +1,11 @@
 import { useRef, useEffect, useState, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { RigidBody, RapierRigidBody, interactionGroups } from '@react-three/rapier';
+import {
+  RigidBody,
+  RapierRigidBody,
+  interactionGroups,
+  CapsuleCollider,
+} from '@react-three/rapier';
 import { useKeyboard } from '../../../hooks/useKeyboard';
 import {
   MOVE_SPEED,
@@ -10,6 +15,8 @@ import {
   CAMERA_HEIGHT,
   CAMERA_BACK_OFFSET,
   PLAYER_HALF_HEIGHT,
+  PLAYER_RADIUS,
+  PLAYER_BODY_LENGTH,
 } from '../../../constants/player';
 import { STAGE_SPAWN } from '../../../constants/stages';
 import * as THREE from 'three';
@@ -184,12 +191,16 @@ export default function Player() {
     setIsMoving(direction.length() > 0.01);
     setHeadPitchState(rotationRef.current.pitch);
 
-    // 接地判定: 中心から下向きにレイを飛ばし、ヒット距離が半高+マージン以内かを確認
-    const rayOrigin = new THREE.Vector3(position.x, position.y, position.z);
+    // 接地判定: カプセルコライダーの底から少し上の位置からレイを飛ばす
+    // カプセルの位置 = position + [0, PLAYER_HALF_HEIGHT, 0]
+    // カプセルの底 = カプセル中心 - (PLAYER_BODY_LENGTH/2 + PLAYER_RADIUS)
+    //              = position + PLAYER_HALF_HEIGHT - PLAYER_HALF_HEIGHT = position
+    // つまり、RigidBodyの中心(position)がちょうどカプセルの底になる
+    const rayOrigin = new THREE.Vector3(position.x, position.y + 0.1, position.z);
     raycasterRef.current.set(rayOrigin, new THREE.Vector3(0, -1, 0));
     const intersects = scene ? raycasterRef.current.intersectObjects(scene.children, true) : [];
-    const grounded =
-      intersects.length > 0 && intersects[0].distance <= PLAYER_HALF_HEIGHT + GROUNDED_RAY_DISTANCE;
+    // レイの起点を少し上げたので、その分を考慮
+    const grounded = intersects.length > 0 && intersects[0].distance <= 0.1 + GROUNDED_RAY_DISTANCE;
 
     // 立ち上がり検出でジャンプを発火（押し始めのみ）
     const rising = keys.jump && !prevJumpRef.current;
@@ -239,7 +250,7 @@ export default function Player() {
       <RigidBody
         name="player"
         ref={playerRef}
-        colliders="ball"
+        colliders={false}
         mass={1}
         position={spawn}
         enabledRotations={[false, false, false]}
@@ -247,6 +258,13 @@ export default function Player() {
         userData={{ isPlayer: true }}
         collisionGroups={interactionGroups(1, [0, 3, 4, 5])} // グループ1（プレイヤー）: 地形・敵と衝突、弾丸（グループ2）とは衝突しない
       >
+        {/* 人型に適したカプセルコライダー（縦長の円柱＋半球） */}
+        {/* args: [halfHeight, radius] - カプセルの中心円柱の半分の高さと半径 */}
+        <CapsuleCollider
+          args={[PLAYER_BODY_LENGTH / 2, PLAYER_RADIUS]}
+          position={[0, PLAYER_HALF_HEIGHT, 0]}
+        />
+
         {/* モデルは縮小して表示。コライダー中心に合わせて位置を調整 */}
         <group
           ref={modelRef}

@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { RigidBody, RapierRigidBody } from '@react-three/rapier';
+import { RigidBody, RapierRigidBody, CapsuleCollider } from '@react-three/rapier';
 import * as THREE from 'three';
 import { ENEMY_STATS } from '../../../constants/enemies';
 import useGameStore from '../../../stores/useGameStore';
@@ -105,12 +105,15 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
       ref={bodyRef}
       type="dynamic"
       position={enemy.position}
-      colliders="ball"
+      colliders={false}
       lockRotations
       linearDamping={0.5}
       name={`enemy-${enemy.id}`}
       userData={{ type: 'enemy', id: enemy.id }}
     >
+      {/* 人型に適したカプセルコライダー（縦長の円柱＋半球） */}
+      <CapsuleCollider args={[0.5, 0.3]} position={[0, 0.5, 0]} />
+
       {/* 3Dモデルの表示 */}
       <group
         ref={modelGroupRef}
@@ -121,18 +124,35 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
       </group>
 
       {/* HPバーの表示（敵の上部） */}
-      <group position={[0, 2.5, 0]}>
-        {/* 背景（赤） */}
-        <mesh position={[0, 0, 0]}>
-          <planeGeometry args={[1, 0.1]} />
-          <meshBasicMaterial color="#ff0000" transparent opacity={0.7} side={2} />
-        </mesh>
-        {/* HP（緑） */}
-        <mesh position={[-0.5 * (1 - enemy.health / stats.maxHealth), 0, 0.01]}>
-          <planeGeometry args={[enemy.health / stats.maxHealth, 0.1]} />
-          <meshBasicMaterial color="#00ff00" transparent opacity={0.9} side={2} />
-        </mesh>
-      </group>
+      {enemy.health > 0 && (
+        <group position={[0, 2.5, 0]}>
+          {/* 背景（赤） */}
+          <mesh position={[0, 0, 0]}>
+            <planeGeometry args={[1, 0.1]} />
+            <meshBasicMaterial
+              color="#ff0000"
+              transparent
+              opacity={0.7}
+              side={THREE.DoubleSide}
+              depthWrite={false}
+            />
+          </mesh>
+          {/* HP（緑） */}
+          <mesh
+            position={[-0.5 * (1 - Math.max(0.01, enemy.health / stats.maxHealth)), 0, 0.01]}
+            scale={[Math.max(0.01, enemy.health / stats.maxHealth), 1, 1]}
+          >
+            <planeGeometry args={[1, 0.1]} />
+            <meshBasicMaterial
+              color="#00ff00"
+              transparent
+              opacity={0.9}
+              side={THREE.DoubleSide}
+              depthWrite={false}
+            />
+          </mesh>
+        </group>
+      )}
     </RigidBody>
   );
 }

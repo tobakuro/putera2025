@@ -132,10 +132,12 @@ function Bullet({ startPosition, direction }: BulletProps) {
       if (hasHit) return;
 
       const enemyVec = new THREE.Vector3(...enemy.position);
+      // 敵の中心をY軸方向にオフセット（カプセルコライダーの中心に合わせる）
+      enemyVec.y += 0.5;
       const distance = bulletVec.distanceTo(enemyVec);
 
-      // 衝突判定（弾の半径 + 敵のサイズを考慮）
-      const collisionThreshold = BULLET_RADIUS + 0.5; // 敵のサイズの半分程度
+      // 衝突判定（弾の半径 + カプセルコライダーの半径を考慮）
+      const collisionThreshold = BULLET_RADIUS + 0.4; // カプセルの半径0.3 + 余裕0.1
       if (distance < collisionThreshold) {
         // ダメージを与える
         const newHealth = Math.max(0, enemy.health - PISTOL_DAMAGE);
