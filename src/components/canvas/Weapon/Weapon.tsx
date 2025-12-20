@@ -86,24 +86,18 @@ export default function Weapon({ playerRef, isShooting, cameraRotationRef }: Wea
   return (
     <>
       {bullets.current.map((bullet) => (
-        <Bullet
-          key={bullet.id}
-          bulletData={bullet}
-          startPosition={bullet.startPosition}
-          direction={bullet.direction}
-        />
+        <Bullet key={bullet.id} startPosition={bullet.startPosition} direction={bullet.direction} />
       ))}
     </>
   );
 }
 
 type BulletProps = {
-  bulletData: BulletData;
   startPosition: THREE.Vector3;
   direction: THREE.Vector3;
 };
 
-function Bullet({ bulletData, startPosition, direction }: BulletProps) {
+function Bullet({ startPosition, direction }: BulletProps) {
   const bulletRef = useRef<RapierRigidBody>(null);
   const hasAppliedVelocity = useRef(false);
   const [hasHit, setHasHit] = useState(false);
@@ -135,10 +129,12 @@ function Bullet({ bulletData, startPosition, direction }: BulletProps) {
       if (hasHit) return;
 
       const enemyVec = new THREE.Vector3(...enemy.position);
+      // 敵の中心をY軸方向にオフセット（カプセルコライダーの中心に合わせる）
+      enemyVec.y += 0.5;
       const distance = bulletVec.distanceTo(enemyVec);
 
-      // 衝突判定（弾の半径 + 敵のサイズを考慮）
-      const collisionThreshold = BULLET_RADIUS + 0.5; // 敵のサイズの半分程度
+      // 衝突判定（弾の半径 + カプセルコライダーの半径を考慮）
+      const collisionThreshold = BULLET_RADIUS + 0.4; // カプセルの半径0.3 + 余裕0.1
       if (distance < collisionThreshold) {
         // ダメージを与える
         const newHealth = Math.max(0, enemy.health - PISTOL_DAMAGE);
