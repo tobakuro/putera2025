@@ -68,16 +68,15 @@ export default function StageSelect({ localStage, setLocalStage, onNext, onBack 
           alignItems: 'center',
         }}
       >
-        <h2 style={{ margin: 0, color: 'white', textAlign: 'center', width: '100%' }}>
-          ステージ選択
-        </h2>
+        {/* 見出しテキストは UI の重複を避けるため非表示にしました */}
 
         <div
           style={{
-            display: 'flex',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 260px)',
             gap: 16,
             marginTop: 12,
-            alignItems: 'center',
+            alignItems: 'start',
             justifyContent: 'center',
           }}
         >
@@ -140,34 +139,63 @@ export default function StageSelect({ localStage, setLocalStage, onNext, onBack 
             </button>
             <div style={{ color: 'white', fontWeight: 700 }}>バグ</div>
           </div>
-        </div>
 
-        {/* Stage L - メトロポリス */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-          <button
-            type="button"
-            onClick={() => setLocalStage('stageL')}
-            style={{
-              width: 260,
-              height: 160,
-              padding: 0,
-              borderRadius: 10,
-              overflow: 'hidden',
-              position: 'relative',
-              border:
-                localStage === 'stageL' ? '3px solid #10b981' : '2px solid rgba(255,255,255,0.12)',
-              background: 'transparent',
-              cursor: 'pointer',
-            }}
-          >
-            <Image
-              src="/textures/2D_UI/metropolis.png"
-              alt="stage-metropolis"
-              fill
-              style={{ objectFit: 'cover', display: 'block' }}
-            />
-          </button>
-          <div style={{ color: 'white', fontWeight: 700 }}>メトロポリス</div>
+          {/* Stage 2 - 迷路 (ランダム生成、プレビューなし) */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => setLocalStage('stage2')}
+              style={{
+                width: 260,
+                height: 160,
+                padding: 0,
+                borderRadius: 10,
+                overflow: 'hidden',
+                position: 'relative',
+                border:
+                  localStage === 'stage2'
+                    ? '3px solid #10b981'
+                    : '2px solid rgba(255,255,255,0.12)',
+                background: 'linear-gradient(180deg, rgba(30,30,30,0.6), rgba(10,10,10,0.6))',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <div style={{ color: 'white', fontWeight: 700 }}>迷路 (ランダム)</div>
+            </button>
+            <div style={{ color: 'white', fontWeight: 700 }}>迷路</div>
+          </div>
+          {/* Stage L - メトロポリス */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => setLocalStage('stageL')}
+              style={{
+                width: 260,
+                height: 160,
+                padding: 0,
+                borderRadius: 10,
+                overflow: 'hidden',
+                position: 'relative',
+                border:
+                  localStage === 'stageL'
+                    ? '3px solid #10b981'
+                    : '2px solid rgba(255,255,255,0.12)',
+                background: 'transparent',
+                cursor: 'pointer',
+              }}
+            >
+              <Image
+                src="/textures/2D_UI/metropolis.png"
+                alt="stage-metropolis"
+                fill
+                style={{ objectFit: 'cover', display: 'block' }}
+              />
+            </button>
+            <div style={{ color: 'white', fontWeight: 700 }}>メトロポリス</div>
+          </div>
         </div>
       </div>
 
