@@ -15,6 +15,7 @@ export default function HUD() {
   const gameState = useGameStore((s) => s.gameState);
   const stageId = useGameStore((s) => s.stageId);
   const [seconds, setSeconds] = useState(0);
+  const [timeOffset, setTimeOffset] = useState(0); // seconds offset applied to displayed time
 
   // start/stop timer when gameState becomes 'playing'
   useEffect(() => {
@@ -32,8 +33,44 @@ export default function HUD() {
     };
   }, [gameState]);
 
-  const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
-  const ss = String(seconds % 60).padStart(2, '0');
+  // Periodically vary displayed time by a random offset in [-3, +3] every 5-10 seconds
+  useEffect(() => {
+    let timeoutId: number | undefined;
+    let active = true;
+
+    function scheduleNext() {
+      if (!active) return;
+      // choose next delay between 5s and 10s
+      const delay = 5000 + Math.floor(Math.random() * 5001); // 5000..10000 ms
+      timeoutId = window.setTimeout(() => {
+        if (!active) return;
+        // choose random offset between -3 and +3 (can be fractional)
+        const offset = Math.random() * 6 - 3;
+        setTimeOffset(offset);
+        // schedule subsequent change
+        scheduleNext();
+      }, delay);
+    }
+
+    if (gameState === 'playing') {
+      // start with zero offset at beginning of play session (deferred to avoid sync state change)
+      setTimeout(() => setTimeOffset(0), 0);
+      scheduleNext();
+    } else {
+      // clear and reset offset when not playing
+      setTimeout(() => setTimeOffset(0), 0);
+    }
+
+    return () => {
+      active = false;
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    };
+  }, [gameState]);
+
+  // Apply time offset and clamp to >= 0 seconds for display
+  const displaySeconds = Math.max(0, Math.round(seconds + timeOffset));
+  const mm = String(Math.floor(displaySeconds / 60)).padStart(2, '0');
+  const ss = String(displaySeconds % 60).padStart(2, '0');
   const timeText = `${mm}:${ss}`;
 
   // Safe HP calculations: guard against division by zero and invalid values
