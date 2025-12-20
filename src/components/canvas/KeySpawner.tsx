@@ -45,6 +45,65 @@ function createSpawnSet(count: number, spawnPoints: [number, number, number][]) 
     }));
 }
 
+// Utilities for generating random points in a rectangle while excluding a sub-rectangle
+function randBetween(min: number, max: number) {
+  return Math.random() * (max - min) + min;
+}
+
+function round1(v: number) {
+  return Math.round(v * 10) / 10;
+}
+
+type Rect = { xMin: number; xMax: number; zMin: number; zMax: number };
+
+function isInsideExclude(x: number, z: number, ex: Rect) {
+  return x >= ex.xMin && x <= ex.xMax && z >= ex.zMin && z <= ex.zMax;
+}
+
+function generateStage1Points(
+  count: number,
+  bounds: { xMin: number; xMax: number; zMin: number; zMax: number; yMin: number; yMax: number },
+  exclude: Rect,
+  otherPoints: [number, number, number][] = [],
+  minDistance = 1.5,
+  maxAttempts = 1000
+): [number, number, number][] {
+  const out: [number, number, number][] = [];
+  let attempts = 0;
+  while (out.length < count && attempts < maxAttempts) {
+    attempts += 1;
+    const x = randBetween(bounds.xMin, bounds.xMax);
+    const z = randBetween(bounds.zMin, bounds.zMax);
+    // Apply exclusion on rounded coordinates (user requested)
+    const rx = round1(x);
+    const rz = round1(z);
+    if (isInsideExclude(rx, rz, exclude)) continue;
+    const y = randBetween(bounds.yMin, bounds.yMax);
+    // avoid near-duplicates among generated
+    const near = out.some((p) => Math.hypot(p[0] - x, p[2] - z) < 1.0);
+    if (near) continue;
+    // avoid proximity to otherPoints (e.g., hearts)
+    const nearOther = otherPoints.some((p) => Math.hypot(p[0] - x, p[2] - z) < minDistance);
+    if (nearOther) continue;
+    out.push([round1(x), round1(y), round1(z)]);
+  }
+  return out;
+}
+
+// Top-level stage1 bounds/exclude so getSpawnPointsForStage can be stable
+const STAGE1_BOUNDS = { xMin: -28, xMax: 28, zMin: -27, zMax: 27, yMin: -0.5, yMax: 1 };
+const STAGE1_EXCLUDE: Rect = { xMin: -12, xMax: -11, zMin: 23, zMax: 27 };
+
+function getSpawnPointsForStage(id: string, num: number) {
+  if (id === 'stage1') {
+    const other = useGameStore.getState().lastHeartSpawns || [];
+    const otherPts: [number, number, number][] = other.map((p) => [p.x, p.y, p.z]);
+    return generateStage1Points(num, STAGE1_BOUNDS, STAGE1_EXCLUDE, otherPts, 1.8);
+  }
+  const pts = KEY_SPAWN_BY_STAGE[id] ?? KEY_SPAWN_BY_STAGE['stage0'];
+  return shuffle(pts).slice(0, Math.min(num, pts.length));
+}
+
 type KeySpawn = ReturnType<typeof createSpawnSet>[number];
 
 type KeySpawnerProps = {
@@ -60,17 +119,21 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
   const itemResetTrigger = useGameStore((s) => s.itemResetTrigger);
   const prevGameStateRef = useRef(gameState);
   const stageId = useGameStore((s) => s.stageId);
-  const spawnPoints = KEY_SPAWN_BY_STAGE[stageId] ?? KEY_SPAWN_BY_STAGE['stage0'];
 
-  // Ensure we don't spawn more keys than allowed by MAX_KEYS when
-  // combined with the player's currently held keys.
-  const effectiveSpawnCount = Math.max(
-    0,
-    Math.min(count, MAX_KEYS - keysCollected, spawnPoints.length)
+  // Desired number to spawn considering player's held keys
+  const desiredCount = Math.max(0, Math.min(count, MAX_KEYS - keysCollected));
+
+  const spawnPoints = useMemo(
+    () => getSpawnPointsForStage(stageId, desiredCount),
+    [stageId, desiredCount]
   );
-  const [keys, setKeys] = useState<KeySpawn[]>(() =>
-    createSpawnSet(effectiveSpawnCount, spawnPoints)
-  );
+  const [keys, setKeys] = useState<KeySpawn[]>(() => createSpawnSet(desiredCount, spawnPoints));
+  const setLastKeySpawns = useGameStore((s) => s.setLastKeySpawns);
+
+  // publish initial key spawn positions to store for other spawners
+  useEffect(() => {
+    setLastKeySpawns(spawnPoints.map((p) => ({ x: p[0], y: p[1], z: p[2] })));
+  }, [spawnPoints, setLastKeySpawns]);
 
   useEffect(() => {
     if (gameState !== 'playing') {
@@ -80,28 +143,34 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
     // Only reset keys when entering playing from menu or gameover (new session)
     const prev = prevGameStateRef.current;
     const timer = window.setTimeout(() => {
-      const pts = KEY_SPAWN_BY_STAGE[stageId] ?? KEY_SPAWN_BY_STAGE['stage0'];
+      const pts = getSpawnPointsForStage(stageId, desiredCount);
       const spawnCount = Math.max(
         0,
         Math.min(count, MAX_KEYS - useGameStore.getState().keysCollected, pts.length)
       );
       setKeys(createSpawnSet(spawnCount, pts));
+      // publish to store for hearts to avoid
+      useGameStore.getState().setLastKeySpawns(pts.map((p) => ({ x: p[0], y: p[1], z: p[2] })));
       if (prev === 'menu' || prev === 'gameover') {
         resetKeys();
       }
     }, 0);
     prevGameStateRef.current = gameState;
     return () => window.clearTimeout(timer);
-  }, [count, gameState, resetKeys, itemResetTrigger]);
+  }, [count, gameState, resetKeys, itemResetTrigger, stageId, desiredCount]);
 
+  // Update total keys whenever map/held counts change
   useEffect(() => {
-    // totalKeys represents the total remaining in the level = on-map + held
     setTotalKeys(keys.length + keysCollected);
+  }, [keys.length, keysCollected, setTotalKeys]);
+
+  // On unmount (leaving the spawner), reset totals and held keys
+  useEffect(() => {
     return () => {
       setTotalKeys(0);
       resetKeys();
     };
-  }, [keys.length, keysCollected, resetKeys, setTotalKeys]);
+  }, [setTotalKeys, resetKeys]);
 
   const handlePickup = useCallback(
     (id: string) => {
