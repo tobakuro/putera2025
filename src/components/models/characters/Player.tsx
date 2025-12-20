@@ -17,8 +17,6 @@ export type GroupProps = {
   scale?: THREE.Vector3 | [number, number, number] | number;
   /** 移動中なら歩行モーションを再生 */
   play?: boolean;
-  /** 今は未使用（将来の頭ピッチ反映用） */
-  headPitch?: number;
   children?: React.ReactNode;
   dispose?: unknown;
   [key: string]: unknown;
@@ -42,7 +40,7 @@ type GLTFResult = GLTF & {
 };
 
 export function Model(props: GroupProps) {
-  const { play, headPitch, ...groupProps } = props;
+  const { play, ...groupProps } = props;
   // useRef must be initialized; allow null until mounted
   const group = React.useRef<THREE.Group | null>(null);
   const { scene, animations } = useGLTF('/models/3D/glb/hitogata/hitogata_move.glb');
@@ -78,12 +76,13 @@ export function Model(props: GroupProps) {
       action.setLoop(THREE.LoopOnce, 1);
       action.setEffectiveWeight(1);
       action.setEffectiveTimeScale(WALK_SPEED);
+      // 最終フレームへ移動してから停止（time を play の前に設定）
+      const clipDuration = action.getClip().duration;
       action.reset();
-      action.play();
-      // 最終フレームに固定
+      (action as unknown as { time: number }).time = Math.max(0, clipDuration - 1e-3);
       action.clampWhenFinished = true;
-      action.time = Math.max(0, action.getClip().duration - 1e-3);
       action.paused = true;
+      action.play();
       /* eslint-enable react-hooks/immutability */
     }
 
@@ -93,8 +92,7 @@ export function Model(props: GroupProps) {
     };
   }, [actions, play]);
 
-  // 将来: headPitch をボーンへ反映する用（現状は未使用）
-  void headPitch;
+  // headPitch は現在未使用（将来的にボーン回転へ反映する場合に追加予定）
   return (
     <group ref={group} {...groupProps} dispose={null}>
       <group name="Scene">
@@ -105,6 +103,8 @@ export function Model(props: GroupProps) {
             geometry={nodes.立方体002.geometry}
             material={materials.kuro}
             skeleton={nodes.立方体002.skeleton}
+            castShadow
+            receiveShadow
           />
         </group>
       </group>

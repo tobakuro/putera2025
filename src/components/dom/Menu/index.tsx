@@ -10,10 +10,8 @@ export default function Menu() {
   const resetGame = useGameStore((s) => s.resetGame);
 
   const onStart = () => {
-    // リセットするとstageIdも初期化されるので、選択を維持してからプレイ状態へ
-    const chosenStage = stageId;
-    resetGame();
-    setStageId(chosenStage);
+    // ステージ選択を維持したままゲームをリセットして開始
+    resetGame(true);
     setGameState('playing');
   };
 
