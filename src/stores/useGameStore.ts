@@ -68,6 +68,12 @@ export type State = {
   itemResetTrigger: number;
   triggerItemReset: () => void;
 
+  // 最近生成されたスポーン位置（デバッグ / 衝突回避用）
+  lastKeySpawns: { x: number; y: number; z: number }[];
+  setLastKeySpawns: (points: { x: number; y: number; z: number }[]) => void;
+  lastHeartSpawns: { x: number; y: number; z: number }[];
+  setLastHeartSpawns: (points: { x: number; y: number; z: number }[]) => void;
+
   // ゲームリセット
   resetGame: (preserveStage?: boolean) => void;
   // リスポーン制御: トークンをインクリメントしてプレイヤーに通知
@@ -80,14 +86,14 @@ export type State = {
 };
 
 export const useGameStore = create<State>(
-  (set, get) =>
+  (set) =>
     ({
-      ...createGameSlice(set, get),
-      ...createCameraSlice(set, get),
-      ...createPlayerSlice(set, get),
-      ...createAmmoSlice(set, get),
-      ...createKeysSlice(set, get),
-      ...createEnemiesSlice(set, get),
+      ...createGameSlice(set),
+      ...createCameraSlice(set),
+      ...createPlayerSlice(set),
+      ...createAmmoSlice(set),
+      ...createKeysSlice(set),
+      ...createEnemiesSlice(set),
     }) as unknown as State
 );
 

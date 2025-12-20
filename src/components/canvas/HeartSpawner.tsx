@@ -45,6 +45,59 @@ function createSpawnSet(count: number, spawnPoints: [number, number, number][]) 
     }));
 }
 
+// Utilities for stage1 random generation (same rules as keys)
+function randBetween(min: number, max: number) {
+  return Math.random() * (max - min) + min;
+}
+
+function round1(v: number) {
+  return Math.round(v * 10) / 10;
+}
+
+type Rect = { xMin: number; xMax: number; zMin: number; zMax: number };
+
+function isInsideExclude(x: number, z: number, ex: Rect) {
+  return x >= ex.xMin && x <= ex.xMax && z >= ex.zMin && z <= ex.zMax;
+}
+
+function generateStage1Points(
+  count: number,
+  bounds: { xMin: number; xMax: number; zMin: number; zMax: number; yMin: number; yMax: number },
+  exclude: Rect,
+  otherPoints: [number, number, number][] = [],
+  minDistance = 1.5,
+  maxAttempts = 1000
+): [number, number, number][] {
+  const out: [number, number, number][] = [];
+  let attempts = 0;
+  while (out.length < count && attempts < maxAttempts) {
+    attempts += 1;
+    const x = randBetween(bounds.xMin, bounds.xMax);
+    const z = randBetween(bounds.zMin, bounds.zMax);
+    if (isInsideExclude(x, z, exclude)) continue;
+    const y = randBetween(bounds.yMin, bounds.yMax);
+    const near = out.some((p) => Math.hypot(p[0] - x, p[2] - z) < 1.0);
+    if (near) continue;
+    const nearOther = otherPoints.some((p) => Math.hypot(p[0] - x, p[2] - z) < minDistance);
+    if (nearOther) continue;
+    out.push([round1(x), round1(y), round1(z)]);
+  }
+  return out;
+}
+// Top-level stage1 bounds/exclude so getSpawnPointsForStage can be stable
+const STAGE1_BOUNDS = { xMin: -28, xMax: 28, zMin: -27, zMax: 27, yMin: -0.5, yMax: 1 };
+const STAGE1_EXCLUDE: Rect = { xMin: -12, xMax: -11, zMin: 23, zMax: 27 };
+
+function getSpawnPointsForStage(id: string, num: number) {
+  if (id === 'stage1') {
+    const other = useGameStore.getState().lastKeySpawns || [];
+    const otherPts: [number, number, number][] = other.map((p) => [p.x, p.y, p.z]);
+    return generateStage1Points(num, STAGE1_BOUNDS, STAGE1_EXCLUDE, otherPts, 1.8);
+  }
+  const pts = HEART_SPAWN_BY_STAGE[id] ?? HEART_SPAWN_BY_STAGE['stage0'];
+  return shuffle(pts).slice(0, Math.min(num, pts.length));
+}
+
 type HeartSpawn = ReturnType<typeof createSpawnSet>[number];
 
 type HeartSpawnerProps = {
@@ -56,14 +109,20 @@ export default function HeartSpawner({ count = DEFAULT_HEART_COUNT }: HeartSpawn
   const stageId = useGameStore((s) => s.stageId);
   const gameState = useGameStore((s) => s.gameState);
   const itemResetTrigger = useGameStore((s) => s.itemResetTrigger);
-  const spawnPoints = HEART_SPAWN_BY_STAGE[stageId] ?? HEART_SPAWN_BY_STAGE['stage0'];
+  const spawnPoints = useMemo(() => getSpawnPointsForStage(stageId, count), [stageId, count]);
   const [hearts, setHearts] = useState<HeartSpawn[]>(() => createSpawnSet(count, spawnPoints));
+  const setLastHeartSpawns = useGameStore((s) => s.setLastHeartSpawns);
+
+  useEffect(() => {
+    setLastHeartSpawns(spawnPoints.map((p) => ({ x: p[0], y: p[1], z: p[2] })));
+  }, [spawnPoints, setLastHeartSpawns]);
 
   useEffect(() => {
     if (gameState !== 'playing') return;
     const timer = window.setTimeout(() => {
-      const pts = HEART_SPAWN_BY_STAGE[stageId] ?? HEART_SPAWN_BY_STAGE['stage0'];
+      const pts = getSpawnPointsForStage(stageId, count);
       setHearts(createSpawnSet(count, pts));
+      useGameStore.getState().setLastHeartSpawns(pts.map((p) => ({ x: p[0], y: p[1], z: p[2] })));
     }, 0);
     return () => window.clearTimeout(timer);
   }, [count, gameState, itemResetTrigger, stageId]);

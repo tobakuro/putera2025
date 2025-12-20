@@ -1,8 +1,9 @@
 import type { State } from '../useGameStore';
+import type { StoreApi } from 'zustand';
 
-type SetState<T> = (partial: Partial<T> | ((state: T) => Partial<T>), replace?: boolean) => void;
+type SetStateType = StoreApi<State>['setState'];
 
-export const createKeysSlice = (set: SetState<State>): Partial<State> => ({
+export const createKeysSlice = (set: SetStateType): Partial<State> => ({
   keysCollected: 0,
   totalKeys: 1,
   setTotalKeys: (total: number) =>

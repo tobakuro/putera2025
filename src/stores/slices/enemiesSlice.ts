@@ -1,8 +1,9 @@
 import type { State } from '../useGameStore';
+import type { StoreApi } from 'zustand';
 
-type SetState<T> = (partial: Partial<T> | ((state: T) => Partial<T>), replace?: boolean) => void;
+type SetStateType = StoreApi<State>['setState'];
 
-export const createEnemiesSlice = (set: SetState<State>): Partial<State> => ({
+export const createEnemiesSlice = (set: SetStateType): Partial<State> => ({
   enemies: [] as State['enemies'],
   addEnemy: (enemy: State['enemies'][number]) =>
     set((s: State) => ({ enemies: [...s.enemies, enemy] })),

@@ -1,9 +1,9 @@
 import type { State } from '../useGameStore';
+import type { StoreApi } from 'zustand';
 
-// Minimal local typings to avoid depending on zustand's exported helper types
-type SetState<T> = (partial: Partial<T> | ((state: T) => Partial<T>), replace?: boolean) => void;
+type SetStateType = StoreApi<State>['setState'];
 
-export const createCameraSlice = (set: SetState<State>): Partial<State> => ({
+export const createCameraSlice = (set: SetStateType): Partial<State> => ({
   cameraMode: 'third',
   setCameraMode: (mode: 'third' | 'first') => set({ cameraMode: mode }),
   toggleCameraMode: () =>
