@@ -16,7 +16,7 @@ export interface EnemyStats {
 // 敵タイプ別のステータス定義
 export const ENEMY_STATS: Record<EnemyType, EnemyStats> = {
   basic: {
-    maxHealth: 100,
+    maxHealth: 4,
     speed: 3.0,
     damage: 10,
     attackRange: 1.5,
@@ -26,7 +26,7 @@ export const ENEMY_STATS: Record<EnemyType, EnemyStats> = {
     scoreValue: 100,
   },
   fast: {
-    maxHealth: 50,
+    maxHealth: 2,
     speed: 6.0,
     damage: 5,
     attackRange: 1.0,
@@ -36,7 +36,7 @@ export const ENEMY_STATS: Record<EnemyType, EnemyStats> = {
     scoreValue: 150,
   },
   tank: {
-    maxHealth: 300,
+    maxHealth: 10,
     speed: 1.5,
     damage: 25,
     attackRange: 2.0,
@@ -46,7 +46,7 @@ export const ENEMY_STATS: Record<EnemyType, EnemyStats> = {
     scoreValue: 300,
   },
   sniper: {
-    maxHealth: 75,
+    maxHealth: 1,
     speed: 2.0,
     damage: 30,
     attackRange: 15,
