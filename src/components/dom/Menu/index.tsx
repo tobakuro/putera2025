@@ -80,6 +80,23 @@ export default function Menu() {
           >
             Stage 1 (stage1.glb)
           </button>
+
+          <button
+            type="button"
+            onClick={() => setStageId('stage2')}
+            style={{
+              padding: '10px 14px',
+              fontSize: 14,
+              borderRadius: 10,
+              border:
+                stageId === 'stage2' ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.25)',
+              cursor: 'pointer',
+              background: stageId === 'stage2' ? 'rgba(16,185,129,0.25)' : 'rgba(0,0,0,0.15)',
+              color: 'white',
+            }}
+          >
+            Stage 2 (迷路)
+          </button>
         </div>
       </div>
       <div style={{ marginTop: 20 }}>

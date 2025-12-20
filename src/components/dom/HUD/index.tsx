@@ -184,7 +184,10 @@ export default function HUD() {
       <div style={{ position: 'absolute', right: 16, top: 16 }}>
         <div style={panelStyle}>
           <div style={{ textAlign: 'center' }}>
-            <div>現在の目標: カギを集めろ</div>
+            <div>
+              現在の目標:{' '}
+              {totalKeys > 0 && keysCollected >= totalKeys ? 'ゴールを探せ' : 'カギを集めろ'}
+            </div>
             <div style={{ marginTop: 6 }}>
               鍵: [
               <Image
