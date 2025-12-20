@@ -1,4 +1,10 @@
 import { create } from 'zustand';
+import { createGameSlice } from './slices/gameSlice';
+import { createCameraSlice } from './slices/cameraSlice';
+import { createPlayerSlice } from './slices/playerSlice';
+import { createAmmoSlice } from './slices/ammoSlice';
+import { createKeysSlice } from './slices/keysSlice';
+import { createEnemiesSlice } from './slices/enemiesSlice';
 import type { EnemyType } from '../constants/enemies';
 
 export type GameState = 'menu' | 'playing' | 'paused' | 'gameover';
@@ -13,7 +19,7 @@ export interface Enemy {
   position: [number, number, number];
 }
 
-type State = {
+export type State = {
   // ゲーム状態
   gameState: GameState;
   setGameState: (state: GameState) => void;
@@ -73,134 +79,16 @@ type State = {
   toggleCameraMode: () => void;
 };
 
-const INITIAL_STATE = {
-  gameState: 'menu' as GameState,
-  stageId: 'stage0' as StageId,
-  score: 0,
-  playerHP: 100,
-  maxHP: 100,
-  currentAmmo: 30,
-  maxAmmo: 30,
-  reserveAmmo: 90,
-  keysCollected: 0,
-  totalKeys: 1,
-  enemies: [] as Enemy[],
-  itemResetTrigger: 0,
-  playerPosition: { x: 0, y: 0, z: 0 },
-  cameraMode: 'third' as 'third' | 'first',
-};
-
-// デフォルトステージID（型安全に参照するため）
-const DEFAULT_STAGE_ID: StageId = 'stage0';
-
-export const useGameStore = create<State>((set) => ({
-  ...INITIAL_STATE,
-
-  // ゲーム状態
-  setGameState: (gameState) => set({ gameState }),
-
-  // ステージ選択
-  setStageId: (stageId) => set({ stageId }),
-
-  // スコア
-  addScore: (n) => set((s) => ({ score: s.score + n })),
-  resetScore: () => set({ score: 0 }),
-
-  // プレイヤーHP
-  takeDamage: (damage) =>
-    set((s) => {
-      const newHP = Math.max(0, s.playerHP - damage);
-      return {
-        playerHP: newHP,
-        gameState: newHP <= 0 ? 'gameover' : s.gameState,
-      } as Partial<State>;
-    }),
-  heal: (amount) =>
-    set((s) => ({
-      playerHP: Math.min(s.maxHP, s.playerHP + amount),
-    })),
-  // プレイヤー座標
-  setPlayerPosition: (position) => set({ playerPosition: position }),
-  // 弾薬
-  shoot: () => {
-    let fired = false;
-    set((s) => {
-      if (s.currentAmmo > 0) {
-        fired = true;
-        return { currentAmmo: s.currentAmmo - 1 } as Partial<State>;
-      }
-      return {} as Partial<State>;
-    });
-    return fired;
-  },
-  reload: () =>
-    set((s) => {
-      const needed = s.maxAmmo - s.currentAmmo;
-      const available = Math.min(needed, s.reserveAmmo);
-      return {
-        currentAmmo: s.currentAmmo + available,
-        reserveAmmo: s.reserveAmmo - available,
-      };
-    }),
-
-  // カギ
-  setTotalKeys: (total) =>
-    set((s) => {
-      const clampedTotal = Math.max(0, total);
-      return {
-        totalKeys: clampedTotal,
-        keysCollected: Math.min(s.keysCollected, clampedTotal),
-      } as Partial<State>;
-    }),
-  collectKey: () =>
-    set((s) => ({
-      keysCollected: Math.min(s.totalKeys, s.keysCollected + 1),
-    })),
-  resetKeys: () => set({ keysCollected: 0 }),
-
-  // アイテムリセットトリガー
-  triggerItemReset: () =>
-    set((s) => ({
-      itemResetTrigger: s.itemResetTrigger + 1,
-      keysCollected: 0, // 鍵の入手数もリセット
-    })),
-
-  // ゲームリセット
-  // preserveStage=true の場合は現在の stageId を保持してリセットする
-  resetGame: (preserveStage = false) =>
-    set((s) => {
-      const stageId = preserveStage ? s.stageId : DEFAULT_STAGE_ID;
-      return { ...INITIAL_STATE, stageId } as State;
-    }),
-  // 敵管理
-  addEnemy: (enemy) =>
-    set((s) => ({
-      enemies: [...s.enemies, enemy],
-    })),
-  removeEnemy: (id) =>
-    set((s) => ({
-      enemies: s.enemies.filter((e) => e.id !== id),
-    })),
-  updateEnemyHealth: (id, health) =>
-    set((s) => ({
-      enemies: s.enemies.map((e) => (e.id === id ? { ...e, health } : e)),
-    })),
-  updateEnemyPosition: (id, position) =>
-    set((s) => ({
-      enemies: s.enemies.map((e) => (e.id === id ? { ...e, position } : e)),
-    })),
-  clearEnemies: () => set({ enemies: [] }),
-
-  // リスポーン: トークンを増やしHPを全回復する
-  respawnToken: 0,
-  requestRespawn: () =>
-    set((s) => ({ respawnToken: s.respawnToken + 1, playerHP: s.maxHP }) as Partial<State>),
-
-  // カメラモード制御
-  cameraMode: 'third',
-  setCameraMode: (mode) => set({ cameraMode: mode }),
-  toggleCameraMode: () =>
-    set((s) => ({ cameraMode: s.cameraMode === 'third' ? 'first' : 'third' }) as Partial<State>),
-}));
+export const useGameStore = create<State>(
+  (set, get) =>
+    ({
+      ...createGameSlice(set, get),
+      ...createCameraSlice(set, get),
+      ...createPlayerSlice(set, get),
+      ...createAmmoSlice(set, get),
+      ...createKeysSlice(set, get),
+      ...createEnemiesSlice(set, get),
+    }) as unknown as State
+);
 
 export default useGameStore;
