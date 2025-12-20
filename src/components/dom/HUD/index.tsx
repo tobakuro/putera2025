@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import useGameStore from '../../../stores/useGameStore';
 
@@ -8,10 +8,14 @@ export default function HUD() {
   const maxHP = useGameStore((s) => s.maxHP);
   const currentAmmo = useGameStore((s) => s.currentAmmo);
   const reserveAmmo = useGameStore((s) => s.reserveAmmo);
+  const keysCollected = useGameStore((s) => s.keysCollected);
+  const totalKeys = useGameStore((s) => s.totalKeys);
 
   // simple time placeholder (could be wired to store or game timer)
   const gameState = useGameStore((s) => s.gameState);
+  const stageId = useGameStore((s) => s.stageId);
   const [seconds, setSeconds] = useState(0);
+  const [timeOffset, setTimeOffset] = useState(0); // seconds offset applied to displayed time
 
   // start/stop timer when gameState becomes 'playing'
   useEffect(() => {
@@ -29,14 +33,76 @@ export default function HUD() {
     };
   }, [gameState]);
 
-  const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
-  const ss = String(seconds % 60).padStart(2, '0');
+  // Periodically vary displayed time by a random offset in [-3, +3] every 5-10 seconds
+  useEffect(() => {
+    let timeoutId: number | undefined;
+    let active = true;
+
+    function scheduleNext() {
+      if (!active) return;
+      // choose next delay between 5s and 10s
+      const delay = 5000 + Math.floor(Math.random() * 5001); // 5000..10000 ms
+      timeoutId = window.setTimeout(() => {
+        if (!active) return;
+        // choose random offset between -3 and +3 (can be fractional)
+        const offset = Math.random() * 6 - 3;
+        setTimeOffset(offset);
+        // schedule subsequent change
+        scheduleNext();
+      }, delay);
+    }
+
+    if (gameState === 'playing') {
+      // start with zero offset at beginning of play session (deferred to avoid sync state change)
+      setTimeout(() => setTimeOffset(0), 0);
+      scheduleNext();
+    } else {
+      // clear and reset offset when not playing
+      setTimeout(() => setTimeOffset(0), 0);
+    }
+
+    return () => {
+      active = false;
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    };
+  }, [gameState]);
+
+  // Apply time offset and clamp to >= 0 seconds for display
+  const displaySeconds = Math.max(0, Math.round(seconds + timeOffset));
+  const mm = String(Math.floor(displaySeconds / 60)).padStart(2, '0');
+  const ss = String(displaySeconds % 60).padStart(2, '0');
   const timeText = `${mm}:${ss}`;
 
   // Safe HP calculations: guard against division by zero and invalid values
   const hpPercent = maxHP > 0 ? Math.round((playerHP / maxHP) * 100) : 0;
   const hpBlocks = Math.max(0, Math.min(12, Math.round((hpPercent / 100) * 12)));
   const hpBar = '■'.repeat(hpBlocks);
+
+  const keyPickupAudioRef = useRef<HTMLAudioElement | null>(null);
+  const prevKeysRef = useRef(keysCollected);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const audio = new Audio('/sounds/keyget.mp3');
+    audio.volume = 0.35;
+    keyPickupAudioRef.current = audio;
+    return () => {
+      audio.pause();
+      keyPickupAudioRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const audio = keyPickupAudioRef.current;
+    if (!audio) return;
+    if (keysCollected > prevKeysRef.current) {
+      audio.currentTime = 0;
+      audio.play().catch(() => {
+        /* auto-play restrictions */
+      });
+    }
+    prevKeysRef.current = keysCollected;
+  }, [keysCollected]);
 
   const containerStyle: React.CSSProperties = {
     position: 'fixed',
@@ -72,6 +138,9 @@ export default function HUD() {
       {/* Top-left: HP + Time */}
       <div style={{ position: 'absolute', left: 16, top: 16 }}>
         <div style={panelStyle}>
+          {gameState === 'playing' && (
+            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 6 }}>stage: {stageId}</div>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Image
               src="/textures/2D_UI/ライフ＿プレイヤー体力.png"
@@ -119,7 +188,7 @@ export default function HUD() {
                   display: 'inline-block',
                 }}
               />
-              ] (0/1)
+              ] ({keysCollected}/{totalKeys})
             </div>
           </div>
         </div>

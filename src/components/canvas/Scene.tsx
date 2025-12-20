@@ -4,6 +4,8 @@ import { Canvas } from '@react-three/fiber';
 import { Physics, RigidBody } from '@react-three/rapier';
 import Player from './Player';
 import Level from './Level';
+import KeySpawner from './KeySpawner';
+import HeartSpawner from './HeartSpawner';
 
 export default function Scene() {
   return (
@@ -26,6 +28,9 @@ export default function Scene() {
         <Player />
 
         <Level />
+
+        <KeySpawner />
+        <HeartSpawner />
 
         {/* テスト用の立方体 */}
         <RigidBody colliders="cuboid">

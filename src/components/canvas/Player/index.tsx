@@ -11,13 +11,18 @@ import {
   CAMERA_BACK_OFFSET,
   PLAYER_HALF_HEIGHT,
 } from '../../../constants/player';
+import { STAGE_SPAWN } from '../../../constants/stages';
 import * as THREE from 'three';
 import { Model as PlayerModel } from '../../models/characters/Player';
+import useGameStore from '../../../stores/useGameStore';
 
 export default function Player() {
   const playerRef = useRef<RapierRigidBody>(null);
   const { camera, gl, scene } = useThree();
   const keys = useKeyboard();
+  const stageId = useGameStore((s) => s.stageId);
+
+  const spawn = STAGE_SPAWN[stageId] ?? ([0, 5, 0] as const);
 
   // カメラの回転角度
   const rotationRef = useRef({ yaw: 0, pitch: 0 });
@@ -26,9 +31,41 @@ export default function Player() {
   // 表示状態をレンダー側に渡すための state
   const [isMoving, setIsMoving] = useState(false);
   const [headPitchState, setHeadPitchState] = useState(0);
+  const footstepAudioRef = useRef<HTMLAudioElement | null>(null);
   // ジャンプ押下の立ち上がり検出用
   const prevJumpRef = useRef(false);
   const raycasterRef = useRef(new THREE.Raycaster());
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const audio = new Audio('/sounds/footstep.mp3');
+    audio.loop = true;
+    audio.volume = 0.07;
+    footstepAudioRef.current = audio;
+    return () => {
+      audio.pause();
+      footstepAudioRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const audio = footstepAudioRef.current;
+    if (!audio) return undefined;
+
+    if (isMoving) {
+      audio.play().catch(() => {
+        // 自動再生制限で失敗するケースは握りつぶす
+      });
+    } else {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+
+    return () => {
+      audio.pause();
+      audio.currentTime = 0;
+    };
+  }, [isMoving]);
 
   // ポインターロックの設定
   useEffect(() => {
@@ -126,10 +163,11 @@ export default function Player() {
 
   return (
     <RigidBody
+      name="player"
       ref={playerRef}
       colliders="ball"
       mass={1}
-      position={[0, 5, 0]}
+      position={spawn}
       enabledRotations={[false, false, false]}
       linearDamping={0.5}
     >
