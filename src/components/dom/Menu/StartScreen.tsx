@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 
 type Props = {
   onStart: () => void;
@@ -16,19 +17,18 @@ export default function StartScreen({ onStart }: Props) {
       }}
     >
       {/* Background image only (visible) */}
-      <img
-        src="/textures/2D_UI/サムネイル.png"
-        alt="thumbnail"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          // brighten image so the screen is not too dark
-          filter: 'brightness(0.9) contrast(1.05) saturate(1.05)',
-        }}
-      />
+      <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+        <Image
+          src="/textures/2D_UI/サムネイル.png"
+          alt="thumbnail"
+          fill
+          priority
+          style={{
+            objectFit: 'cover',
+            filter: 'brightness(0.9) contrast(1.05) saturate(1.05)',
+          }}
+        />
+      </div>
 
       {/* Clickable invisible overlay button that covers the full screen */}
       <button

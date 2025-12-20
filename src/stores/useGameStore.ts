@@ -36,7 +36,8 @@ export type State = {
   // プレイヤー状態
   playerHP: number;
   maxHP: number;
-  takeDamage: (damage: number) => void;
+  // damage: 数値, reason: 死亡/ダメージ原因の説明（任意）, time: ゲーム内時間または時刻（任意）
+  takeDamage: (damage: number, reason?: string, time?: number) => void;
   heal: (amount: number) => void;
 
   // プレイヤー座標
@@ -76,6 +77,10 @@ export type State = {
 
   // ゲームリセット
   resetGame: (preserveStage?: boolean) => void;
+  // 死亡時の情報（gameover に遷移したときに設定される）
+  deathReason?: string | null;
+  deathTime?: number | null; // 秒などのゲーム内時刻
+  deathKeys?: number | null; // 死亡時に保持していた鍵の個数
   // レベル選択 (1-4)
   level: number;
   setLevel: (level: number) => void;

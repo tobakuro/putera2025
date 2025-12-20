@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import type { StageId } from '../../../stores/useGameStore';
 
 type Props = {
@@ -29,25 +30,21 @@ export default function StageSelect({ localStage, setLocalStage, onNext, onBack 
       }}
     >
       {/* Background for the stage select screen */}
-      <img
-        src="/textures/2D_UI/stage.png"
-        alt="stage-select-bg"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          // fill the screen to avoid left/right letterbox; crop if necessary
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          objectPosition: 'center',
-          zIndex: 0,
-          // slightly enlarge background so important edges show better
-          transform: 'scale(1.06)',
-          transformOrigin: 'center',
-          // keep a very light dim so text remains readable but background not too dark
-          filter: 'brightness(1) contrast(1.02)',
-        }}
-      />
+      <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0 }}>
+        <Image
+          src="/textures/2D_UI/stage.png"
+          alt="stage-select-bg"
+          fill
+          priority
+          style={{
+            objectFit: 'cover',
+            objectPosition: 'center',
+            transform: 'scale(1.06)',
+            transformOrigin: 'center',
+            filter: 'brightness(1) contrast(1.02)',
+          }}
+        />
+      </div>
 
       {/* Very subtle overlay for contrast (reduced) */}
       <div
@@ -95,6 +92,7 @@ export default function StageSelect({ localStage, setLocalStage, onNext, onBack 
                 padding: 0,
                 borderRadius: 10,
                 overflow: 'hidden',
+                position: 'relative',
                 border:
                   localStage === 'stage0'
                     ? '3px solid #10b981'
@@ -103,10 +101,11 @@ export default function StageSelect({ localStage, setLocalStage, onNext, onBack 
                 cursor: 'pointer',
               }}
             >
-              <img
+              <Image
                 src="/textures/2D_UI/stage0.png"
                 alt="stage-city"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                fill
+                style={{ objectFit: 'cover', display: 'block' }}
               />
             </button>
             <div style={{ color: 'white', fontWeight: 700 }}>シティ</div>
@@ -123,6 +122,7 @@ export default function StageSelect({ localStage, setLocalStage, onNext, onBack 
                 padding: 0,
                 borderRadius: 10,
                 overflow: 'hidden',
+                position: 'relative',
                 border:
                   localStage === 'stage1'
                     ? '3px solid #10b981'
@@ -131,10 +131,11 @@ export default function StageSelect({ localStage, setLocalStage, onNext, onBack 
                 cursor: 'pointer',
               }}
             >
-              <img
+              <Image
                 src="/textures/2D_UI/stage1.png"
                 alt="stage-bug"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                fill
+                style={{ objectFit: 'cover', display: 'block' }}
               />
             </button>
             <div style={{ color: 'white', fontWeight: 700 }}>バグ</div>
