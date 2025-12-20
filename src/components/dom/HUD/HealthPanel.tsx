@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
+// Use native img for HUD icons to avoid next/image issues
 import useGameStore from '../../../stores/useGameStore';
 
 export default function HealthPanel() {
@@ -82,7 +82,7 @@ export default function HealthPanel() {
           <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 6 }}>stage: {stageId}</div>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Image
+          <img
             src="/textures/2D_UI/ライフ＿プレイヤー体力.png"
             alt="life"
             width={28}
@@ -94,7 +94,7 @@ export default function HealthPanel() {
               HP: {hpBar} {hpPercent}%
             </div>
             <div style={{ marginTop: 6 }}>
-              <Image
+              <img
                 src="/textures/2D_UI/タイム＿ゲームタイム.png"
                 alt="time"
                 width={18}

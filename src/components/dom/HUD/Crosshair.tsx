@@ -1,6 +1,4 @@
 import React from 'react';
-import Image from 'next/image';
-
 export default function Crosshair() {
   return (
     <div
@@ -12,7 +10,7 @@ export default function Crosshair() {
         pointerEvents: 'none',
       }}
     >
-      <Image
+      <img
         src="/textures/2D_UI/エイムカーソル＿常に中央表示.png"
         alt="crosshair"
         width={32}

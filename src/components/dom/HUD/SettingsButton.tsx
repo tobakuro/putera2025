@@ -1,5 +1,5 @@
 import React from 'react';
-import Image from 'next/image';
+// Use native img for HUD icons
 
 export default function SettingsButton() {
   const panelStyle: React.CSSProperties = {
@@ -28,7 +28,7 @@ export default function SettingsButton() {
             justifyContent: 'center',
           }}
         >
-          <Image
+          <img
             src="/textures/2D_UI/設定＿なくてもいい（ゲーム中断）.png"
             alt="settings"
             width={36}
