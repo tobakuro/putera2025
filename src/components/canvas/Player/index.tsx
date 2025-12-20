@@ -204,6 +204,7 @@ export default function Player() {
     if (cameraMode === 'first') {
       // 一人称: プレイヤーの頭位置にカメラを置く（後方オフセットなし）
       camOffset = new THREE.Vector3(0, PLAYER_HALF_HEIGHT + CAMERA_HEIGHT, 0);
+      camOffset.applyEuler(new THREE.Euler(0, rotationRef.current.yaw, 0));
       // モデルは見えないようにする（主に視界の邪魔を防ぐため）
       if (modelRef.current) modelRef.current.visible = false;
     } else {
