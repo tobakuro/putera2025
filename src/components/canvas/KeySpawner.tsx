@@ -217,12 +217,25 @@ function KeyInstance({ data, onCollect, gameState }: KeyInstanceProps) {
   });
 
   const handleEnter = useCallback(
-    ({ other }: { other: { rigidBodyObject?: { name?: string } } }) => {
+    ({ other }: { other?: { rigidBodyObject?: { name?: string } } }) => {
       if (collected) return;
-      if (other.rigidBodyObject?.name !== 'player') return;
-      onCollect(id);
+      // First try the rapier-provided object name check
+      if (other?.rigidBodyObject?.name === 'player') {
+        onCollect(id);
+        return;
+      }
+      // Fallback: compare player position to this key position (robust if rapier event shape differs)
+      const playerPos = useGameStore.getState().playerPosition;
+      if (playerPos) {
+        const dx = playerPos.x - position[0];
+        const dz = playerPos.z - position[2];
+        const dist = Math.hypot(dx, dz);
+        if (dist < 1.5) {
+          onCollect(id);
+        }
+      }
     },
-    [collected, id, onCollect]
+    [collected, id, onCollect, position]
   );
 
   return (

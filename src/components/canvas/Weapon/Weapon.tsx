@@ -1,13 +1,13 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { RigidBody, RapierRigidBody, interactionGroups } from '@react-three/rapier';
 import * as THREE from 'three';
+import { useGLTF } from '@react-three/drei';
 import {
   PISTOL_FIRE_RATE,
   PISTOL_DAMAGE,
   BULLET_SPEED,
   BULLET_LIFETIME,
-  BULLET_RADIUS,
 } from '../../../constants/weapons';
 import useGameStore from '../../../stores/useGameStore';
 import { ENEMY_STATS } from '../../../constants/enemies';
@@ -109,6 +109,12 @@ function Bullet({ startPosition, direction }: BulletProps) {
   const updateEnemyHealth = useGameStore((s) => s.updateEnemyHealth);
   const addScore = useGameStore((s) => s.addScore);
 
+  const MODEL_PATH = '/models/3D/glb/dangan/dangan.glb';
+  const { scene } = useGLTF(MODEL_PATH) as { scene: THREE.Group };
+  const cloned = useMemo(() => scene.clone(), [scene]);
+  const { camera } = useThree();
+  const visualRef = useRef<THREE.Group | null>(null);
+
   // 衝突（壁/地形/敵）を検出
   const handleCollision = ({ other }: { other: { rigidBodyObject?: { userData?: unknown } } }) => {
     if (hasHit) return;
@@ -130,7 +136,6 @@ function Bullet({ startPosition, direction }: BulletProps) {
       }
     }
 
-    // 何かに当たったら弾は無効化
     setHasHit(true);
   };
 
@@ -145,13 +150,24 @@ function Bullet({ startPosition, direction }: BulletProps) {
       bulletRef.current.setLinvel(velocity, true);
       hasAppliedVelocity.current = true;
     }
+
+    // 毎フレーム、モデルの底面がカメラを向くように回転を設定する
+    const vis = visualRef.current;
+    if (vis) {
+      const worldPos = new THREE.Vector3();
+      vis.getWorldPosition(worldPos);
+      const toCam = new THREE.Vector3().subVectors(camera.position, worldPos).normalize();
+      const fromVec = new THREE.Vector3(0, -1, 0);
+      const q = new THREE.Quaternion().setFromUnitVectors(fromVec, toCam);
+      vis.quaternion.slerp(q, 0.3);
+    }
   });
 
   // 弾が当たったら表示しない
   if (hasHit) {
     return null;
   }
-
+  // NOTE: hooks (useGLTF/useMemo) are called above to ensure consistent hook order.
   return (
     <RigidBody
       ref={bulletRef}
@@ -166,10 +182,13 @@ function Bullet({ startPosition, direction }: BulletProps) {
       collisionGroups={interactionGroups(2, [0, 3, 4, 5])} // グループ2（弾丸）: 地形・敵と衝突、プレイヤー（グループ1）とは衝突しない
       onCollisionEnter={handleCollision} // 壁/地形/敵との衝突時に弾を無効化（敵の場合はここでダメージ適用）
     >
-      <mesh>
-        <sphereGeometry args={[BULLET_RADIUS, 8, 8]} />
-        <meshStandardMaterial color="#ffff00" emissive="#ffff00" emissiveIntensity={0.5} />
-      </mesh>
+      {/* visualRef を使って毎フレームカメラ方向に底面を向ける */}
+      <group ref={visualRef} scale={[0.2, 0.2, 0.2]}>
+        <primitive object={cloned} />
+      </group>
     </RigidBody>
   );
 }
+
+// preload model for smoother first render
+useGLTF.preload('/models/3D/glb/dangan/dangan.glb');
