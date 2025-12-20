@@ -1,4 +1,4 @@
-import type { State } from '../useGameStore';
+import type { StageId, State } from '../useGameStore';
 import type { StoreApi } from 'zustand';
 
 type SetStateType = StoreApi<State>['setState'];
@@ -8,8 +8,7 @@ export const createGameSlice = (set: SetStateType): Partial<State> => ({
   setGameState: (gameState: 'menu' | 'playing' | 'paused' | 'gameover') => set({ gameState }),
 
   stageId: 'stage0',
-  setStageId: (stageId: 'stage0' | 'stage1' | 'stageL') =>
-    set({ stageId, keysCollected: 0, totalKeys: 0 }),
+  setStageId: (stageId: StageId) => set({ stageId, keysCollected: 0, totalKeys: 0 }),
 
   // level は 1..4 の整数
   level: 1,

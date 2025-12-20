@@ -33,7 +33,18 @@ export default function Player() {
   const stageId = useGameStore((s) => s.stageId);
 
   const setPlayerPosition = useGameStore((s) => s.setPlayerPosition);
-  const spawn = useMemo(() => STAGE_SPAWN[stageId] ?? ([0, 5, 0] as const), [stageId]);
+  const spawn = useMemo(() => {
+    const s = STAGE_SPAWN[stageId] ?? ([0, 5, 0] as const);
+    // 特定の座標で壁に埋まる問題を回避するため、その座標付近を避ける
+    const banned = { x: -29.9, y: 4.9, z: -30.0 };
+    const eps = 0.25; // 近接閾値
+    const dist = Math.hypot(s[0] - banned.x, s[1] - banned.y, s[2] - banned.z);
+    if (dist < eps) {
+      // 安全なオフセット位置へ移動（小さく移動して壁との干渉を避ける）
+      return [s[0] + 1.2, s[1], s[2] + 1.2] as const;
+    }
+    return s;
+  }, [stageId]);
 
   // カメラの回転角度
   const rotationRef = useRef({ yaw: 0, pitch: 0 });
@@ -264,7 +275,6 @@ export default function Player() {
           args={[PLAYER_BODY_LENGTH / 2, PLAYER_RADIUS]}
           position={[0, PLAYER_HALF_HEIGHT, 0]}
         />
-
         {/* モデルは縮小して表示。コライダー中心に合わせて位置を調整 */}
         <group
           ref={modelRef}

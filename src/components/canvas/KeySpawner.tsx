@@ -120,8 +120,11 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
   const prevGameStateRef = useRef(gameState);
   const stageId = useGameStore((s) => s.stageId);
 
+  // Maze (stage2) should only spawn a single key
+  const effectiveCount = stageId === 'stage2' ? 1 : count;
+
   // Desired number to spawn considering player's held keys
-  const desiredCount = Math.max(0, Math.min(count, MAX_KEYS - keysCollected));
+  const desiredCount = Math.max(0, Math.min(effectiveCount, MAX_KEYS - keysCollected));
 
   const spawnPoints = useMemo(
     () => getSpawnPointsForStage(stageId, desiredCount),
@@ -146,7 +149,7 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
       const pts = getSpawnPointsForStage(stageId, desiredCount);
       const spawnCount = Math.max(
         0,
-        Math.min(count, MAX_KEYS - useGameStore.getState().keysCollected, pts.length)
+        Math.min(effectiveCount, MAX_KEYS - useGameStore.getState().keysCollected, pts.length)
       );
       setKeys(createSpawnSet(spawnCount, pts));
       // publish to store for hearts to avoid
@@ -157,12 +160,17 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
     }, 0);
     prevGameStateRef.current = gameState;
     return () => window.clearTimeout(timer);
-  }, [count, gameState, resetKeys, itemResetTrigger, stageId, desiredCount]);
+  }, [count, gameState, resetKeys, itemResetTrigger, stageId, desiredCount, effectiveCount]);
 
   // Update total keys whenever map/held counts change
   useEffect(() => {
-    setTotalKeys(keys.length + keysCollected);
-  }, [keys.length, keysCollected, setTotalKeys]);
+    if (stageId === 'stage2') {
+      // Maze requires only one key
+      setTotalKeys(effectiveCount);
+    } else {
+      setTotalKeys(keys.length + keysCollected);
+    }
+  }, [keys.length, keysCollected, setTotalKeys, stageId, effectiveCount]);
 
   // On unmount (leaving the spawner), reset totals and held keys
   useEffect(() => {
