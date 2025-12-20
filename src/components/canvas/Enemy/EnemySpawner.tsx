@@ -10,9 +10,24 @@ import { ENEMY_SPAWN_POINTS } from '../../../constants/stages';
 import Enemy from './Enemy';
 import * as THREE from 'three';
 
-// 敵タイプをランダムに選択する関数
-const getRandomEnemyType = (): EnemyType => {
-  const enemyTypes: EnemyType[] = ['basic', 'fast', 'tank', 'sniper'];
+// レベルに応じた出現可能な敵タイプを返す
+const getAllowedEnemyTypesForLevel = (level: number): EnemyType[] => {
+  switch (level) {
+    case 1:
+      return ['basic'];
+    case 2:
+      return ['basic', 'fast'];
+    case 3:
+      return ['basic', 'fast', 'tank'];
+    case 4:
+    default:
+      return ['basic', 'fast', 'tank', 'sniper'];
+  }
+};
+
+// レベルに応じてランダムに敵タイプを選択
+const getRandomEnemyType = (level: number): EnemyType => {
+  const enemyTypes = getAllowedEnemyTypesForLevel(level);
   return enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
 };
 
@@ -26,6 +41,7 @@ export default function EnemySpawner({ playerPosition }: EnemySpawnerProps) {
   const clearEnemies = useGameStore((s) => s.clearEnemies);
   const gameState = useGameStore((s) => s.gameState);
   const stageId = useGameStore((s) => s.stageId);
+  const level = useGameStore((s) => s.level);
 
   const spawnTimerRef = useRef<number>(0);
   const gameStateRef = useRef(gameState);
@@ -56,7 +72,7 @@ export default function EnemySpawner({ playerPosition }: EnemySpawnerProps) {
 
       for (let i = 0; i < initialEnemyCount; i++) {
         const spawnPoint = spawnPoints[Math.floor(Math.random() * spawnPoints.length)];
-        const enemyType: EnemyType = getRandomEnemyType();
+        const enemyType: EnemyType = getRandomEnemyType(level);
         const id = `enemy-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 11)}`;
 
         addEnemy({
@@ -67,7 +83,7 @@ export default function EnemySpawner({ playerPosition }: EnemySpawnerProps) {
         });
       }
     }
-  }, [gameState, addEnemy, stageId]);
+  }, [gameState, addEnemy, stageId, level]);
 
   // 敵のスポーン処理
   useEffect(() => {
@@ -82,7 +98,7 @@ export default function EnemySpawner({ playerPosition }: EnemySpawnerProps) {
       const spawnPoint = spawnPoints[Math.floor(Math.random() * spawnPoints.length)];
 
       // 敵のタイプをランダムに選択
-      const enemyType: EnemyType = getRandomEnemyType();
+      const enemyType: EnemyType = getRandomEnemyType(level);
 
       // ユニークなIDを生成
       const id = `enemy-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
@@ -97,7 +113,7 @@ export default function EnemySpawner({ playerPosition }: EnemySpawnerProps) {
     }, ENEMY_SPAWN_INTERVAL * 1000);
 
     return () => clearInterval(interval);
-  }, [gameState, enemies.length, addEnemy, stageId]);
+  }, [gameState, enemies.length, addEnemy, stageId, level]);
 
   // 敵をレンダリング
   return (

@@ -8,7 +8,7 @@ export const PLAYER_BODY_LENGTH = 1; // capsule args: [radius, length]
 export const PLAYER_HALF_HEIGHT = (PLAYER_BODY_LENGTH + 2 * PLAYER_RADIUS) / 2;
 
 // ジャンプの到達高さ（メートル） — ここを調整してジャンプの高さを変えてください
-export const JUMP_HEIGHT = 10.0; // 単位: m
+export const JUMP_HEIGHT = 5.0; // 単位: m
 
 // ジャンプに必要な初速（impulse）は v = sqrt(2*g*h)、質量を 1 と仮定している
 export const JUMP_FORCE = Math.sqrt(2 * GRAVITY * JUMP_HEIGHT);

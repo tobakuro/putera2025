@@ -1,6 +1,11 @@
 import { useRef, useEffect, useState, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { RigidBody, RapierRigidBody, BallCollider } from '@react-three/rapier';
+import {
+  RigidBody,
+  RapierRigidBody,
+  interactionGroups,
+  CapsuleCollider,
+} from '@react-three/rapier';
 import { useKeyboard } from '../../../hooks/useKeyboard';
 import {
   MOVE_SPEED,
@@ -10,12 +15,16 @@ import {
   CAMERA_HEIGHT,
   CAMERA_BACK_OFFSET,
   PLAYER_HALF_HEIGHT,
+  PLAYER_RADIUS,
+  PLAYER_BODY_LENGTH,
 } from '../../../constants/player';
 import { STAGE_SPAWN } from '../../../constants/stages';
 import * as THREE from 'three';
 import { Model as PlayerModel } from '../../models/characters/Player';
 import useGameStore from '../../../stores/useGameStore';
 import Weapon from '../Weapon/Weapon';
+
+// カメラモード: 'third' または 'first' は useGameStore に保存される
 
 export default function Player() {
   const playerRef = useRef<RapierRigidBody>(null);
@@ -81,6 +90,8 @@ export default function Player() {
   }, [isMoving]);
 
   const gameState = useGameStore((s) => s.gameState);
+  const cameraMode = useGameStore((s) => s.cameraMode);
+  const toggleCameraMode = useGameStore((s) => s.toggleCameraMode);
 
   // ポインターロックの設定
   useEffect(() => {
@@ -132,6 +143,18 @@ export default function Player() {
     };
   }, [gl.domElement]);
 
+  // カメラモード切替キー (V) をハンドル
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'KeyV') {
+        // メニューやポーズ中でも切替可能にしておく
+        toggleCameraMode();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleCameraMode]);
+
   // リスポーン要求を監視してプレイヤーをスポーン地点へ戻す
   const respawnToken = useGameStore((s) => s.respawnToken);
   useEffect(() => {
@@ -179,12 +202,16 @@ export default function Player() {
     setIsMoving(direction.length() > 0.01);
     setHeadPitchState(rotationRef.current.pitch);
 
-    // 接地判定: 中心から下向きにレイを飛ばし、ヒット距離が半高+マージン以内かを確認
-    const rayOrigin = new THREE.Vector3(position.x, position.y, position.z);
+    // 接地判定: カプセルコライダーの底から少し上の位置からレイを飛ばす
+    // カプセルの位置 = position + [0, PLAYER_HALF_HEIGHT, 0]
+    // カプセルの底 = カプセル中心 - (PLAYER_BODY_LENGTH/2 + PLAYER_RADIUS)
+    //              = position + PLAYER_HALF_HEIGHT - PLAYER_HALF_HEIGHT = position
+    // つまり、RigidBodyの中心(position)がちょうどカプセルの底になる
+    const rayOrigin = new THREE.Vector3(position.x, position.y + 0.1, position.z);
     raycasterRef.current.set(rayOrigin, new THREE.Vector3(0, -1, 0));
     const intersects = scene ? raycasterRef.current.intersectObjects(scene.children, true) : [];
-    const grounded =
-      intersects.length > 0 && intersects[0].distance <= PLAYER_HALF_HEIGHT + GROUNDED_RAY_DISTANCE;
+    // レイの起点を少し上げたので、その分を考慮
+    const grounded = intersects.length > 0 && intersects[0].distance <= 0.1 + GROUNDED_RAY_DISTANCE;
 
     // 立ち上がり検出でジャンプを発火（押し始めのみ）
     const rising = keys.jump && !prevJumpRef.current;
@@ -194,9 +221,21 @@ export default function Player() {
     prevJumpRef.current = keys.jump;
 
     // カメラの位置と回転を更新
-    // カメラはプレイヤー中心 + 半高 + 任意のオフセットに配置し、プレイヤーの向きに合わせて後方に引く
-    const camOffset = new THREE.Vector3(0, PLAYER_HALF_HEIGHT + CAMERA_HEIGHT, -CAMERA_BACK_OFFSET);
-    camOffset.applyEuler(new THREE.Euler(0, rotationRef.current.yaw, 0));
+    // cameraMode に応じて一人称/三人称を切り替える
+    let camOffset: THREE.Vector3;
+    if (cameraMode === 'first') {
+      // 一人称: プレイヤーの頭位置にカメラを置く（後方オフセットなし）
+      camOffset = new THREE.Vector3(0, PLAYER_HALF_HEIGHT + CAMERA_HEIGHT, 0);
+      camOffset.applyEuler(new THREE.Euler(0, rotationRef.current.yaw, 0));
+      // モデルは見えないようにする（主に視界の邪魔を防ぐため）
+      if (modelRef.current) modelRef.current.visible = false;
+    } else {
+      // 三人称: 少し後方に下がった位置にカメラを置く
+      camOffset = new THREE.Vector3(0, PLAYER_HALF_HEIGHT + CAMERA_HEIGHT, -CAMERA_BACK_OFFSET);
+      camOffset.applyEuler(new THREE.Euler(0, rotationRef.current.yaw, 0));
+      if (modelRef.current) modelRef.current.visible = true;
+    }
+
     camera.position.set(
       position.x + camOffset.x,
       position.y + camOffset.y,
@@ -228,8 +267,14 @@ export default function Player() {
         enabledRotations={[false, false, false]}
         linearDamping={0.5}
         userData={{ isPlayer: true }}
+        collisionGroups={interactionGroups(1, [0, 3, 4, 5])} // グループ1（プレイヤー）: 地形・敵と衝突、弾丸（グループ2）とは衝突しない
       >
-        <BallCollider args={[0.35]} />
+        {/* 人型に適したカプセルコライダー（縦長の円柱＋半球） */}
+        {/* args: [halfHeight, radius] - カプセルの中心円柱の半分の高さと半径 */}
+        <CapsuleCollider
+          args={[PLAYER_BODY_LENGTH / 2, PLAYER_RADIUS]}
+          position={[0, PLAYER_HALF_HEIGHT, 0]}
+        />
         {/* モデルは縮小して表示。コライダー中心に合わせて位置を調整 */}
         <group
           ref={modelRef}

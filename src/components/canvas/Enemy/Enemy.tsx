@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { RigidBody, RapierRigidBody } from '@react-three/rapier';
+import { RigidBody, RapierRigidBody, CapsuleCollider } from '@react-three/rapier';
 import * as THREE from 'three';
 import { ENEMY_STATS } from '../../../constants/enemies';
 import useGameStore from '../../../stores/useGameStore';
@@ -21,6 +21,7 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
   const updateEnemyPosition = useGameStore((s) => s.updateEnemyPosition);
   const removeEnemy = useGameStore((s) => s.removeEnemy);
   const takeDamage = useGameStore((s) => s.takeDamage);
+  const gameState = useGameStore((s) => s.gameState);
 
   const stats = ENEMY_STATS[enemy.type];
   const ATTACK_COOLDOWN = 1.0; // 攻撃間隔（秒）
@@ -33,6 +34,8 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
   }, [enemy.health, enemy.id, removeEnemy]);
 
   useFrame((state) => {
+    // ゲームが再生中でなければ敵のAIを停止
+    if (gameState !== 'playing') return;
     if (!bodyRef.current || !modelGroupRef.current) return;
 
     const body = bodyRef.current;
@@ -62,7 +65,8 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
 
         // プレイヤーにダメージを与える（クールダウン付き）
         if (currentTime - lastAttackTimeRef.current >= ATTACK_COOLDOWN) {
-          takeDamage(stats.damage);
+          // 攻撃を受けたときは原因とゲーム内時刻を渡す
+          takeDamage(stats.damage, `Enemy:${enemy.type}`, currentTime);
           lastAttackTimeRef.current = currentTime;
         }
       } else {
@@ -101,12 +105,15 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
       ref={bodyRef}
       type="dynamic"
       position={enemy.position}
-      colliders="ball"
+      colliders={false}
       lockRotations
       linearDamping={0.5}
       name={`enemy-${enemy.id}`}
       userData={{ type: 'enemy', id: enemy.id }}
     >
+      {/* 人型に適したカプセルコライダー（縦長の円柱＋半球） */}
+      <CapsuleCollider args={[0.5, 0.3]} position={[0, 0.5, 0]} />
+
       {/* 3Dモデルの表示 */}
       <group
         ref={modelGroupRef}
@@ -117,18 +124,35 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
       </group>
 
       {/* HPバーの表示（敵の上部） */}
-      <mesh position={[0, 2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[1, 0.1]} />
-        <meshBasicMaterial color="#ff0000" transparent opacity={0.7} />
-      </mesh>
-      <mesh
-        position={[0, 1.5, 0.01]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        scale={[enemy.health / stats.maxHealth, 1, 1]}
-      >
-        <planeGeometry args={[1, 0.1]} />
-        <meshBasicMaterial color="#00ff00" transparent opacity={0.9} />
-      </mesh>
+      {enemy.health > 0 && (
+        <group position={[0, 2.5, 0]}>
+          {/* 背景（赤） */}
+          <mesh position={[0, 0, 0]}>
+            <planeGeometry args={[1, 0.1]} />
+            <meshBasicMaterial
+              color="#ff0000"
+              transparent
+              opacity={0.7}
+              side={THREE.DoubleSide}
+              depthWrite={false}
+            />
+          </mesh>
+          {/* HP（緑） */}
+          <mesh
+            position={[-0.5 * (1 - Math.max(0.01, enemy.health / stats.maxHealth)), 0, 0.01]}
+            scale={[Math.max(0.01, enemy.health / stats.maxHealth), 1, 1]}
+          >
+            <planeGeometry args={[1, 0.1]} />
+            <meshBasicMaterial
+              color="#00ff00"
+              transparent
+              opacity={0.9}
+              side={THREE.DoubleSide}
+              depthWrite={false}
+            />
+          </mesh>
+        </group>
+      )}
     </RigidBody>
   );
 }

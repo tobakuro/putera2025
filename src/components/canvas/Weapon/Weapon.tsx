@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { RigidBody, RapierRigidBody } from '@react-three/rapier';
+import { RigidBody, RapierRigidBody, interactionGroups } from '@react-three/rapier';
 import * as THREE from 'three';
 import {
   PISTOL_FIRE_RATE,
@@ -33,9 +33,11 @@ export default function Weapon({ playerRef, isShooting, cameraRotationRef }: Wea
   const bullets = useRef<BulletData[]>([]);
   const lastShotTime = useRef(0);
   const prevShootingRef = useRef(false);
+  const gameState = useGameStore((s) => s.gameState);
 
   // 弾が消える処理(発射されてから消えるまでの時間は定数をいじってね)
   useFrame((state) => {
+    if (gameState !== 'playing') return;
     const now = state.clock.getElapsedTime();
 
     bullets.current = bullets.current.filter((bullet) => {
@@ -58,20 +60,26 @@ export default function Weapon({ playerRef, isShooting, cameraRotationRef }: Wea
   const shoot = (currentTime: number) => {
     if (!playerRef.current || !cameraRotationRef.current) return;
 
-    // カメラの向きから発射方向を計算
-    const direction = new THREE.Vector3(0, 0, -1);
-    direction.applyEuler(
-      new THREE.Euler(cameraRotationRef.current.pitch, cameraRotationRef.current.yaw, 0, 'YXZ')
-    );
-    direction.normalize();
+    // レイキャストを使用して画面中央（クロスヘア）から発射方向を計算
+    const raycaster = new THREE.Raycaster();
 
-    // 弾の初期位置はカメラ位置から少し前方にしてます
+    // 画面中央の正規化デバイス座標（NDC）は (0, 0)
+    const screenCenter = new THREE.Vector2(0, 0);
+    raycaster.setFromCamera(screenCenter, camera);
+
+    // レイの方向を取得（これがクロスヘアが指している方向）
+    const direction = raycaster.ray.direction.clone().normalize();
+
+    // 弾の初期位置はカメラ位置から少し前方
+    const offset = direction.clone().multiplyScalar(0.5);
+    const startPosition = camera.position.clone().add(offset);
+
     const id = bulletIdCounter++;
 
     bullets.current.push({
       id,
       createdAt: currentTime,
-      startPosition: camera.position.clone(),
+      startPosition: startPosition,
       direction: direction.clone(),
       hasHit: false,
     });
@@ -80,34 +88,34 @@ export default function Weapon({ playerRef, isShooting, cameraRotationRef }: Wea
   return (
     <>
       {bullets.current.map((bullet) => (
-        <Bullet
-          key={bullet.id}
-          bulletData={bullet}
-          startPosition={bullet.startPosition}
-          direction={bullet.direction}
-        />
+        <Bullet key={bullet.id} startPosition={bullet.startPosition} direction={bullet.direction} />
       ))}
     </>
   );
 }
 
 type BulletProps = {
-  bulletData: BulletData;
   startPosition: THREE.Vector3;
   direction: THREE.Vector3;
 };
 
-function Bullet({ bulletData, startPosition, direction }: BulletProps) {
+function Bullet({ startPosition, direction }: BulletProps) {
   const bulletRef = useRef<RapierRigidBody>(null);
   const hasAppliedVelocity = useRef(false);
-  const hasHitRef = useRef(bulletData.hasHit);
+  const [hasHit, setHasHit] = useState(false);
   const updateEnemyHealth = useGameStore((s) => s.updateEnemyHealth);
   const enemies = useGameStore((s) => s.enemies);
   const addScore = useGameStore((s) => s.addScore);
 
+  // 壁や地形との衝突を検出
+  const handleCollision = () => {
+    setHasHit(true);
+  };
+
   // RigidBodyが準備できていることを保証するためにuseFrame内で速度を適用
   useFrame(() => {
-    if (!bulletRef.current || hasHitRef.current) return;
+    if (useGameStore.getState().gameState !== 'playing') return;
+    if (!bulletRef.current || hasHit) return;
 
     // 一度だけ速度を適用
     if (!hasAppliedVelocity.current) {
@@ -121,13 +129,15 @@ function Bullet({ bulletData, startPosition, direction }: BulletProps) {
     const bulletVec = new THREE.Vector3(bulletPos.x, bulletPos.y, bulletPos.z);
 
     enemies.forEach((enemy) => {
-      if (hasHitRef.current) return;
+      if (hasHit) return;
 
       const enemyVec = new THREE.Vector3(...enemy.position);
+      // 敵の中心をY軸方向にオフセット（カプセルコライダーの中心に合わせる）
+      enemyVec.y += 0.5;
       const distance = bulletVec.distanceTo(enemyVec);
 
-      // 衝突判定（弾の半径 + 敵のサイズを考慮）
-      const collisionThreshold = BULLET_RADIUS + 0.5; // 敵のサイズの半分程度
+      // 衝突判定（弾の半径 + カプセルコライダーの半径を考慮）
+      const collisionThreshold = BULLET_RADIUS + 0.4; // カプセルの半径0.3 + 余裕0.1
       if (distance < collisionThreshold) {
         // ダメージを与える
         const newHealth = Math.max(0, enemy.health - PISTOL_DAMAGE);
@@ -140,11 +150,15 @@ function Bullet({ bulletData, startPosition, direction }: BulletProps) {
         }
 
         // 弾を無効化
-        bulletData.hasHit = true;
-        hasHitRef.current = true;
+        setHasHit(true);
       }
     });
   });
+
+  // 弾が当たったら表示しない
+  if (hasHit) {
+    return null;
+  }
 
   return (
     <RigidBody
@@ -157,6 +171,8 @@ function Bullet({ bulletData, startPosition, direction }: BulletProps) {
       sensor={false} // センサーではない - 弾はオブジェクトと衝突する
       linearDamping={0} // 空気抵抗なし
       angularDamping={0} // 回転減衰なし
+      collisionGroups={interactionGroups(2, [0, 3, 4, 5])} // グループ2（弾丸）: 地形・敵と衝突、プレイヤー（グループ1）とは衝突しない
+      onCollisionEnter={handleCollision} // 壁や地形との衝突時に弾を無効化
     >
       <mesh>
         <sphereGeometry args={[BULLET_RADIUS, 8, 8]} />
