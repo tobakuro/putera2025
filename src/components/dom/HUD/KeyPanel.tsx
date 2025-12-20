@@ -5,20 +5,31 @@ import useGameStore from '../../../stores/useGameStore';
 export default function KeyPanel() {
   const keysCollected = useGameStore((s) => s.keysCollected);
   const totalKeys = useGameStore((s) => s.totalKeys);
-  const keyPickupTrigger = useGameStore((s) => s.itemResetTrigger);
   const keyPickupAudioRef = useRef<HTMLAudioElement | null>(null);
+  const prevKeysRef = useRef(keysCollected);
 
   useEffect(() => {
-    // Play sound when keysCollected increases; itemResetTrigger can signal changes too.
-    if (keyPickupAudioRef.current) {
-      try {
-        keyPickupAudioRef.current.currentTime = 0;
-        keyPickupAudioRef.current.play().catch(() => {});
-      } catch {
-        // ignore play errors
-      }
+    if (typeof window === 'undefined') return undefined;
+    const audio = new Audio('/sounds/keyget.mp3');
+    audio.volume = 0.35;
+    keyPickupAudioRef.current = audio;
+    return () => {
+      audio.pause();
+      keyPickupAudioRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const audio = keyPickupAudioRef.current;
+    if (!audio) return;
+    if (keysCollected > prevKeysRef.current) {
+      audio.currentTime = 0;
+      audio.play().catch(() => {
+        /* auto-play restrictions */
+      });
     }
-  }, [keysCollected, keyPickupTrigger]);
+    prevKeysRef.current = keysCollected;
+  }, [keysCollected]);
 
   return (
     <div style={{ position: 'absolute', right: 16, top: 16 }}>
@@ -40,8 +51,6 @@ export default function KeyPanel() {
             <div style={{ fontSize: 12, opacity: 0.8 }}>目的: ドアを開ける</div>
           </div>
         </div>
-
-        <audio ref={keyPickupAudioRef} src="/sounds/keyget.mp3" />
       </div>
     </div>
   );
