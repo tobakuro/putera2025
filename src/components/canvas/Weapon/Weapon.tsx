@@ -35,6 +35,7 @@ export default function Weapon({ playerRef, isShooting, cameraRotationRef }: Wea
   const lastShotTime = useRef(0);
   const prevShootingRef = useRef(false);
   const gameState = useGameStore((s) => s.gameState);
+  const shootAmmo = useGameStore((s) => s.shoot);
 
   // 弾が消える処理(発射されてから消えるまでの時間は定数をいじってね)
   useFrame((state) => {
@@ -63,6 +64,10 @@ export default function Weapon({ playerRef, isShooting, cameraRotationRef }: Wea
   const shoot = (currentTime: number) => {
     if (!playerRef.current || !cameraRotationRef.current) return;
 
+    // 弾薬を消費できるかチェック
+    const fired = shootAmmo();
+    if (!fired) return; // 弾薬がない場合は発射しない
+
     // レイキャストを使用して画面中央（クロスヘア）から発射方向を計算
     const raycaster = new THREE.Raycaster();
 
@@ -90,6 +95,9 @@ export default function Weapon({ playerRef, isShooting, cameraRotationRef }: Wea
 
   return (
     <>
+      {/* 1人称視点の武器モデル */}
+      <WeaponModel camera={camera} />
+
       {bullets.current.map((bullet) => (
         <Bullet key={bullet.id} startPosition={bullet.startPosition} direction={bullet.direction} />
       ))}
@@ -108,6 +116,7 @@ function Bullet({ startPosition, direction }: BulletProps) {
   const [hasHit, setHasHit] = useState(false);
   const updateEnemyHealth = useGameStore((s) => s.updateEnemyHealth);
   const addScore = useGameStore((s) => s.addScore);
+  const incrementKillCount = useGameStore((s) => s.incrementKillCount);
 
   const MODEL_PATH = '/models/3D/glb/dangan/dangan.glb';
   const { scene } = useGLTF(MODEL_PATH) as { scene: THREE.Group };
@@ -132,6 +141,10 @@ function Bullet({ startPosition, direction }: BulletProps) {
         if (newHealth <= 0) {
           const scoreValue = ENEMY_STATS[enemy.type].scoreValue;
           addScore(scoreValue);
+          // 敵を倒したときにキルカウンターを増やす
+          if (incrementKillCount) {
+            incrementKillCount();
+          }
         }
       }
     }
@@ -192,3 +205,38 @@ function Bullet({ startPosition, direction }: BulletProps) {
 
 // preload model for smoother first render
 useGLTF.preload('/models/3D/glb/dangan/dangan.glb');
+
+type WeaponModelProps = {
+  camera: THREE.Camera;
+};
+
+function WeaponModel({ camera }: WeaponModelProps) {
+  const WEAPON_MODEL_PATH = '/models/3D/glb/gun/gun_only.glb';
+  const { scene } = useGLTF(WEAPON_MODEL_PATH) as { scene: THREE.Group };
+  const weaponRef = useRef<THREE.Group>(null);
+  const cameraMode = useGameStore((s) => s.cameraMode);
+
+  useFrame(() => {
+    if (!weaponRef.current) return;
+
+    // カメラの位置と回転に追従
+    weaponRef.current.position.copy(camera.position);
+    weaponRef.current.rotation.copy(camera.rotation);
+
+    // 画面右下にオフセット（より右でさらに下に配置、さらに手前に）
+    const rightOffset = new THREE.Vector3(0.5, -0.4, -0.1);
+    rightOffset.applyQuaternion(camera.quaternion);
+    weaponRef.current.position.add(rightOffset);
+
+    // 銃口部分だけが見えるように回転調整
+    weaponRef.current.rotateX(0.1);
+    weaponRef.current.rotateY(0.2 + Math.PI + Math.PI / 2 + Math.PI); // Y軸にさらに180度
+    weaponRef.current.rotateZ(-Math.PI / 2 + Math.PI / 2); // Z軸にさらに90度
+  });
+
+  return (
+    <group ref={weaponRef} scale={[0.04, 0.04, 0.04]}>
+      {cameraMode === 'first' && <primitive object={scene.clone()} />}
+    </group>
+  );
+}

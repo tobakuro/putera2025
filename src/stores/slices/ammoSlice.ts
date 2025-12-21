@@ -1,12 +1,13 @@
 import type { State } from '../useGameStore';
 import type { StoreApi } from 'zustand';
+import { INITIAL_CURRENT_AMMO, MAX_AMMO, INITIAL_RESERVE_AMMO } from '../../constants/weapons';
 
 type SetStateType = StoreApi<State>['setState'];
 
 export const createAmmoSlice = (set: SetStateType): Partial<State> => ({
-  currentAmmo: 30,
-  maxAmmo: 30,
-  reserveAmmo: 90,
+  currentAmmo: INITIAL_CURRENT_AMMO,
+  maxAmmo: MAX_AMMO,
+  reserveAmmo: INITIAL_RESERVE_AMMO,
   shoot: () => {
     let fired = false;
     set((s: State) => {
