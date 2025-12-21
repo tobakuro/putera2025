@@ -6,5 +6,9 @@ export const PISTOL_FIRE_RATE = 0.2; //連射速度（秒）
 
 //弾の定数
 export const BULLET_SPEED = 75; //弾の速度
-export const BULLET_LIFETIME = 2; //弾が消えるまでの時間（秒）
+export const BULLET_LIFETIME = 3; //弾が消えるまでの時間（秒）
 export const BULLET_RADIUS = 0.05; //弾の半径
+
+//敵の弾の定数
+export const ENEMY_BULLET_SPEED = 10; //敵の弾の速度（プレイヤーより遅い）
+export const ENEMY_BULLET_LIFETIME = 10; //敵の弾が消えるまでの時間（秒）
