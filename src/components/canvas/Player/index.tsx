@@ -272,8 +272,8 @@ export default function Player() {
         position={spawn}
         enabledRotations={[false, false, false]}
         linearDamping={0.5}
-        userData={{ isPlayer: true }}
-        collisionGroups={interactionGroups(1, [0, 3, 4, 5])} // グループ1（プレイヤー）: 地形・敵と衝突、弾丸（グループ2）とは衝突しない
+        userData={{ isPlayer: true, type: 'player' }}
+        collisionGroups={interactionGroups(1, [0, 3, 4, 5])} // グループ1（プレイヤー）: 地形・敵・敵の弾丸と衝突、プレイヤーの弾丸（グループ2）とは衝突しない
       >
         {/* 人型に適したカプセルコライダー（縦長の円柱＋半球） */}
         {/* args: [halfHeight, radius] - カプセルの中心円柱の半分の高さと半径 */}
