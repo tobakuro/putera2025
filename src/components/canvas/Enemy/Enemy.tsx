@@ -8,11 +8,21 @@ import type { Enemy as EnemyData } from '../../../stores/useGameStore';
 import { EnemyModel } from '../../models/characters/EnemyModel';
 import { PLAYER_HALF_HEIGHT } from '../../../constants/player';
 import { perfEnd, perfStart } from '../../../utils/perf';
+import EnemyBullet from './EnemyBullet';
+
+type EnemyBulletData = {
+  id: number;
+  createdAt: number;
+  startPosition: THREE.Vector3;
+  direction: THREE.Vector3;
+};
 
 interface EnemyProps {
   enemy: EnemyData;
   playerPosition: THREE.Vector3;
 }
+
+let enemyBulletIdCounter = 0;
 
 export default function Enemy({ enemy, playerPosition }: EnemyProps) {
   const bodyRef = useRef<RapierRigidBody>(null);
@@ -27,8 +37,44 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
   const takeDamage = useGameStore((s) => s.takeDamage);
   const gameState = useGameStore((s) => s.gameState);
 
+  // スナイパー用の弾丸管理
+  const [bullets, setBullets] = useState<EnemyBulletData[]>([]);
+
   const stats = ENEMY_STATS[enemy.type];
   const ATTACK_COOLDOWN = 1.0; // 攻撃間隔（秒）
+
+  // スナイパー用の弾丸発射関数
+  const shootBullet = (currentTime: number) => {
+    if (!bodyRef.current) return;
+
+    const enemyPos = bodyRef.current.translation();
+    const startPosition = new THREE.Vector3(
+      enemyPos.x,
+      enemyPos.y + 1.5, // 敵の胸の高さから発射
+      enemyPos.z
+    );
+
+    // プレイヤーへの方向を計算
+    const direction = new THREE.Vector3(
+      playerPosition.x - enemyPos.x,
+      playerPosition.y - enemyPos.y,
+      playerPosition.z - enemyPos.z
+    ).normalize();
+
+    const bulletData: EnemyBulletData = {
+      id: enemyBulletIdCounter++,
+      createdAt: currentTime,
+      startPosition: startPosition,
+      direction: direction,
+    };
+
+    setBullets((prev) => [...prev, bulletData]);
+  };
+
+  // 弾丸の削除ハンドラー
+  const handleBulletExpire = (bulletId: number) => {
+    setBullets((prev) => prev.filter((b) => b.id !== bulletId));
+  };
 
   // 敵が死んだら削除
   useEffect(() => {
@@ -89,10 +135,15 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
         body.setLinvel({ x: 0, y: body.linvel().y, z: 0 }, true);
         moving = false;
 
-        // プレイヤーにダメージを与える（クールダウン付き）
+        // 攻撃処理（クールダウン付き）
         if (currentTime - lastAttackTimeRef.current >= ATTACK_COOLDOWN) {
-          // 攻撃を受けたときは原因とゲーム内時刻を渡す
-          takeDamage(stats.damage, `Enemy:${enemy.type}`, currentTime);
+          if (enemy.type === 'sniper') {
+            // スナイパーは弾を発射
+            shootBullet(currentTime);
+          } else {
+            // 他の敵は近接攻撃
+            takeDamage(stats.damage, `Enemy:${enemy.type}`, currentTime);
+          }
           lastAttackTimeRef.current = currentTime;
         }
       } else {
@@ -135,58 +186,73 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
   });
 
   return (
-    <RigidBody
-      ref={bodyRef}
-      type="dynamic"
-      position={enemy.position}
-      colliders={false}
-      lockRotations
-      linearDamping={0.5}
-      name={`enemy-${enemy.id}`}
-      userData={{ type: 'enemy', id: enemy.id }}
-    >
-      {/* 人型に適したカプセルコライダー（縦長の円柱＋半球） */}
-      <CapsuleCollider args={[0.5, 0.3]} position={[0, 0.5, 0]} />
-
-      {/* 3Dモデルの表示 */}
-      <group
-        ref={modelGroupRef}
-        position={[0, -PLAYER_HALF_HEIGHT * (1 / 3), 0]}
-        scale={[1 / 3, 1 / 3, 1 / 3]}
+    <>
+      <RigidBody
+        ref={bodyRef}
+        type="dynamic"
+        position={enemy.position}
+        colliders={false}
+        lockRotations
+        linearDamping={0.5}
+        name={`enemy-${enemy.id}`}
+        userData={{ type: 'enemy', id: enemy.id }}
       >
-        <EnemyModel play={isMoving} color={stats.color} />
-      </group>
+        {/* 人型に適したカプセルコライダー（縦長の円柱＋半球） */}
+        <CapsuleCollider args={[0.5, 0.3]} position={[0, 0.5, 0]} />
 
-      {/* HPバーの表示（敵の上部） */}
-      {enemy.health > 0 && (
-        <group position={[0, 2.5, 0]}>
-          {/* 背景（赤） */}
-          <mesh position={[0, 0, 0]}>
-            <planeGeometry args={[1, 0.1]} />
-            <meshBasicMaterial
-              color="#ff0000"
-              transparent
-              opacity={0.7}
-              side={THREE.DoubleSide}
-              depthWrite={false}
-            />
-          </mesh>
-          {/* HP（緑） */}
-          <mesh
-            position={[-0.5 * (1 - Math.max(0.01, enemy.health / stats.maxHealth)), 0, 0.01]}
-            scale={[Math.max(0.01, enemy.health / stats.maxHealth), 1, 1]}
-          >
-            <planeGeometry args={[1, 0.1]} />
-            <meshBasicMaterial
-              color="#00ff00"
-              transparent
-              opacity={0.9}
-              side={THREE.DoubleSide}
-              depthWrite={false}
-            />
-          </mesh>
+        {/* 3Dモデルの表示 */}
+        <group
+          ref={modelGroupRef}
+          position={[0, -PLAYER_HALF_HEIGHT * (1 / 3), 0]}
+          scale={[1 / 3, 1 / 3, 1 / 3]}
+        >
+          <EnemyModel play={isMoving} color={stats.color} />
         </group>
-      )}
-    </RigidBody>
+
+        {/* HPバーの表示（敵の上部） */}
+        {enemy.health > 0 && (
+          <group position={[0, 2.5, 0]}>
+            {/* 背景（赤） */}
+            <mesh position={[0, 0, 0]}>
+              <planeGeometry args={[1, 0.1]} />
+              <meshBasicMaterial
+                color="#ff0000"
+                transparent
+                opacity={0.7}
+                side={THREE.DoubleSide}
+                depthWrite={false}
+              />
+            </mesh>
+            {/* HP（緑） */}
+            <mesh
+              position={[-0.5 * (1 - Math.max(0.01, enemy.health / stats.maxHealth)), 0, 0.01]}
+              scale={[Math.max(0.01, enemy.health / stats.maxHealth), 1, 1]}
+            >
+              <planeGeometry args={[1, 0.1]} />
+              <meshBasicMaterial
+                color="#00ff00"
+                transparent
+                opacity={0.9}
+                side={THREE.DoubleSide}
+                depthWrite={false}
+              />
+            </mesh>
+          </group>
+        )}
+      </RigidBody>
+
+      {/* スナイパーの弾丸をレンダリング（敵のRigidBodyの外側に独立して配置） */}
+      {enemy.type === 'sniper' &&
+        bullets.map((bullet) => (
+          <EnemyBullet
+            key={bullet.id}
+            id={bullet.id}
+            startPosition={bullet.startPosition}
+            direction={bullet.direction}
+            createdAt={bullet.createdAt}
+            onExpire={handleBulletExpire}
+          />
+        ))}
+    </>
   );
 }
