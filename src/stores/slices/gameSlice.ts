@@ -65,7 +65,8 @@ export const createGameSlice = (set: SetStateType): Partial<State> => ({
           deathReason: null,
           deathTime: null,
           deathKeys: null,
-          cameraMode: 'third',
+          // デフォルトで一人称視点で開始する
+          cameraMode: 'first',
           isClear: false,
         }) as Partial<State>
     );
