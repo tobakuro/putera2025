@@ -23,4 +23,4 @@ export const AMMO_SCALE = 1.0; // モデルのスケール
 export const AMMO_ROTATION_SPEED = 1.0; // 回転速度（rad/s）
 export const AMMO_BOB_SPEED = 2.0; // 上下運動の速度
 export const AMMO_BOB_HEIGHT = 0.3; // 上下運動の高さ
-export const AMMO_COLLIDER_RADIUS = 1.5; // 取得判定の半径（大きめに設定）
+export const AMMO_COLLIDER_RADIUS = 2.0; // 取得判定の半径（大きめに設定）
