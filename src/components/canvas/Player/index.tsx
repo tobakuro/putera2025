@@ -201,10 +201,12 @@ export default function Player() {
     const frontVector = new THREE.Vector3(0, 0, (keys.backward ? 1 : 0) - (keys.forward ? 1 : 0));
     const sideVector = new THREE.Vector3((keys.right ? 1 : 0) - (keys.left ? 1 : 0), 0, 0);
 
+    // Metropolis (stageL) is a much larger map — increase movement speed there to reduce excessive traversal time.
+    const effectiveMoveSpeed = stageId === 'stageL' ? MOVE_SPEED * 3 : MOVE_SPEED;
     direction
       .addVectors(frontVector, sideVector)
       .normalize()
-      .multiplyScalar(MOVE_SPEED)
+      .multiplyScalar(effectiveMoveSpeed)
       .applyEuler(new THREE.Euler(0, rotationRef.current.yaw, 0));
 
     // 速度の更新(Y軸は維持)

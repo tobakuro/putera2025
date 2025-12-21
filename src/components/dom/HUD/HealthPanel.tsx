@@ -7,7 +7,6 @@ import { getStageDisplayName } from '../../../constants/stageDisplayNames';
 export default function HealthPanel() {
   const playerHP = useGameStore((s) => s.playerHP);
   const maxHP = useGameStore((s) => s.maxHP);
-  const playerPosition = useGameStore((s) => s.playerPosition);
   const gameState = useGameStore((s) => s.gameState);
   const stageId = useGameStore((s) => s.stageId);
 
@@ -60,8 +59,7 @@ export default function HealthPanel() {
   const ss = String(displaySeconds % 60).padStart(2, '0');
   const timeText = `${mm}:${ss}`;
 
-  const pos = playerPosition ?? { x: 0, y: 0, z: 0 };
-  const posText = `${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)}`;
+  // playerPosition はストアで保持しているが、デバッグ座標表示は無効化しました
 
   const hpPercent = maxHP > 0 ? Math.round((playerHP / maxHP) * 100) : 0;
   const hpBlocks = Math.max(0, Math.min(10, Math.round((hpPercent / 100) * 10)));
@@ -132,7 +130,7 @@ export default function HealthPanel() {
               />
               <span>{timeText}</span>
             </div>
-            <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>座標: ({posText})</div>
+            {/* デバッグ用座標表示を非表示にしました */}
           </div>
         </div>
       </div>

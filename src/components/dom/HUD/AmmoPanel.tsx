@@ -33,7 +33,6 @@ export default function AmmoPanel() {
             }}
           />
           <div>
-            <div>装備済みの銃アイコン</div>
             <div style={{ marginTop: 6 }}>
               マガジン: {currentAmmo} / 予備弾: {reserveAmmo}
             </div>

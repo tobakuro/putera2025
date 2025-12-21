@@ -139,8 +139,8 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
   const prevGameStateRef = useRef(gameState);
   const stageId = useGameStore((s) => s.stageId);
 
-  // Maze (stage2) should only spawn a single key
-  const effectiveCount = stageId === 'stage2' ? 1 : count;
+  // Maze (stage2) and Metropolis (stageL) should only spawn a single key
+  const effectiveCount = stageId === 'stage2' || stageId === 'stageL' ? 1 : count;
 
   // Determine spawn points for the full effective count (do not shrink on pickup)
   const spawnPoints = useMemo(
