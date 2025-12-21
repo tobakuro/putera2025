@@ -96,6 +96,10 @@ export type State = {
   cameraMode: 'third' | 'first';
   setCameraMode: (mode: 'third' | 'first') => void;
   toggleCameraMode: () => void;
+  // 終了種別: クリア時は true
+  isClear?: boolean;
+  // クリア処理を実行
+  clearGame?: (time?: number) => void;
 };
 
 export const useGameStore = create<State>(
