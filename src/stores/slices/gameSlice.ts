@@ -7,6 +7,9 @@ export const createGameSlice = (set: SetStateType): Partial<State> => ({
   gameState: 'menu',
   setGameState: (gameState: 'menu' | 'playing' | 'paused' | 'gameover') => set({ gameState }),
 
+  // クリアフラグ
+  isClear: false,
+
   stageId: 'stage0',
   setStageId: (stageId: StageId) => set({ stageId, keysCollected: 0, totalKeys: 0 }),
 
@@ -31,6 +34,8 @@ export const createGameSlice = (set: SetStateType): Partial<State> => ({
         deathReason: isDead ? (reason ?? 'Unknown') : (s.deathReason ?? null),
         deathTime: isDead ? (time ?? null) : (s.deathTime ?? null),
         deathKeys: isDead ? (s.keysCollected ?? 0) : (s.deathKeys ?? null),
+        // 死亡はクリアではない
+        isClear: false,
       } as Partial<State>;
     }),
   heal: (amount: number) =>
@@ -61,9 +66,20 @@ export const createGameSlice = (set: SetStateType): Partial<State> => ({
           deathTime: null,
           deathKeys: null,
           cameraMode: 'third',
+          isClear: false,
         }) as Partial<State>
     );
   },
+
+  // クリア処理（鍵を揃った状態でゴールに触れたときに呼ぶ）
+  clearGame: (time?: number) =>
+    set((s: State) => ({
+      gameState: 'gameover',
+      isClear: true,
+      deathReason: 'Clear',
+      deathTime: time ?? null,
+      deathKeys: s.keysCollected ?? 0,
+    })),
 });
 
 export default createGameSlice;

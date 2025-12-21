@@ -10,6 +10,7 @@ export default function GameOver() {
   const deathReason = useGameStore((s) => s.deathReason);
   const deathKeys = useGameStore((s) => s.deathKeys ?? 0);
   const deathTime = useGameStore((s) => s.deathTime ?? null);
+  const isClear = useGameStore((s) => s.isClear ?? false);
 
   const onRestart = () => {
     resetGame(true);
@@ -76,7 +77,7 @@ export default function GameOver() {
         gap: 16,
       }}
     >
-      <h1 style={{ fontSize: 64, margin: 0 }}>ゲームオーバー</h1>
+      <h1 style={{ fontSize: 64, margin: 0 }}>{isClear ? 'クリア！' : 'ゲームオーバー'}</h1>
       <div
         style={{
           width: 560,
@@ -92,10 +93,19 @@ export default function GameOver() {
           <div style={{ fontSize: 32, fontWeight: 700 }}>{score}</div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-          <div style={{ fontSize: 20 }}>死亡原因</div>
-          <div style={{ fontSize: 20 }}>{localizeReason(deathReason)}</div>
-        </div>
+        {!isClear && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+            <div style={{ fontSize: 20 }}>死亡原因</div>
+            <div style={{ fontSize: 20 }}>{localizeReason(deathReason)}</div>
+          </div>
+        )}
+
+        {isClear && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+            <div style={{ fontSize: 20 }}>結果</div>
+            <div style={{ fontSize: 20 }}>ステージクリア</div>
+          </div>
+        )}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
           <div style={{ fontSize: 20 }}>所持鍵数</div>

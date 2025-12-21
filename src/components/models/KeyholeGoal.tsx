@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import useGameStore from '../../stores/useGameStore';
+import { getScaledGoalPosition } from '../../constants/goals';
 
 export function KeyholeGoal() {
   const groupRef = useRef<THREE.Group>(null);
@@ -10,8 +11,9 @@ export function KeyholeGoal() {
   const totalKeys = useGameStore((state) => state.totalKeys);
   const isUnlocked = keysCollected >= totalKeys && totalKeys > 0;
 
-  // 鍵穴の固定座標
-  const POSITION: [number, number, number] = [36.1, 1.5, 36.0];
+  // ステージに応じた座標を定数から取得（STAGE_SCALE を考慮）
+  const stageId = useGameStore((s) => s.stageId);
+  const POSITION: [number, number, number] = getScaledGoalPosition(stageId);
 
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
@@ -22,10 +24,24 @@ export function KeyholeGoal() {
       groupRef.current.position.y = Math.sin(t * 1.5) * 0.2;
     }
   });
+  // フレームの経過時間を保持して handleEnter から使えるようにする
+  const latestTimeRef = useRef<number>(0);
+  useFrame((state) => {
+    latestTimeRef.current = state.clock.getElapsedTime();
+  });
+
+  const clearGame = useGameStore((s) => s.clearGame);
 
   const handleEnter = ({ other }: { other: { rigidBodyObject?: { name?: string } } }) => {
     if (other.rigidBodyObject?.name === 'player' && isUnlocked) {
-      if (typeof window !== 'undefined') window.location.href = '/goal';
+      // 鍵が揃っていれば経過時間を渡してクリア処理を発行
+      const elapsed = latestTimeRef.current ?? null;
+      if (clearGame) {
+        clearGame(elapsed ?? undefined);
+      } else if (typeof window !== 'undefined') {
+        // フォールバック: 旧実装と同様のページ遷移（互換性保険）
+        window.location.href = '/goal';
+      }
     }
   };
 
