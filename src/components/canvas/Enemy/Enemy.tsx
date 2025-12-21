@@ -27,6 +27,7 @@ let enemyBulletIdCounter = 0;
 export default function Enemy({ enemy, playerPosition }: EnemyProps) {
   const bodyRef = useRef<RapierRigidBody>(null);
   const modelGroupRef = useRef<THREE.Group>(null);
+  const hpGroupRef = useRef<THREE.Group>(null);
   const lastAttackTimeRef = useRef<number>(0);
   const lastMovingRef = useRef<boolean>(false);
   const lastPosSyncTimeRef = useRef<number>(0);
@@ -74,6 +75,20 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
 
     setBullets((prev) => [...prev, bulletData]);
   };
+
+  // HPバーを常にカメラに向ける（ビルボード） — Y軸回転のみを行い傾きを防ぐ
+  useFrame((state) => {
+    if (hpGroupRef.current) {
+      const worldPos = new THREE.Vector3();
+      hpGroupRef.current.getWorldPosition(worldPos);
+      const camPos = state.camera.position;
+      const dx = camPos.x - worldPos.x;
+      const dz = camPos.z - worldPos.z;
+      const angle = Math.atan2(dx, dz);
+      // X/Z 平面のみで回転を設定して傾きを防ぐ
+      hpGroupRef.current.rotation.set(0, angle, 0);
+    }
+  });
 
   // 弾丸の削除ハンドラー
   const handleBulletExpire = (bulletId: number) => {
@@ -215,7 +230,7 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
 
         {/* HPバーの表示（敵の上部） */}
         {enemy.health > 0 && (
-          <group position={[0, 2.5, 0]}>
+          <group ref={hpGroupRef} position={[0, 2.5, 0]}>
             {/* 背景（赤） */}
             <mesh position={[0, 0, 0]}>
               <planeGeometry args={[1, 0.1]} />
