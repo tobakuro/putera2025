@@ -10,6 +10,8 @@ import HeartSpawner from './HeartSpawner';
 import AmmoSpawner from './Items/AmmoSpawner';
 import EnemyManager from './Enemy/EnemyManager';
 import ResetSpot from './ResetSpot';
+import useGameStore from '../../stores/useGameStore';
+import { RESET_SPOTS } from '../../constants/stages';
 import {
   AMBIENT_INTENSITY,
   DIRECTIONAL_LIGHT,
@@ -83,7 +85,12 @@ export default function Scene() {
         {/* 敵システム */}
         <EnemyManager />
 
-        <ResetSpot position={[17.5, 0.1, 0]} />
+        {/* Stage-specific reset spots: don't render for stages without a RESET_SPOTS entry (e.g., stage2) */}
+        {(() => {
+          const stageId = useGameStore.getState().stageId;
+          const pos = RESET_SPOTS[stageId];
+          return pos ? <ResetSpot position={pos} /> : null;
+        })()}
         {/* ContactShadows を追加して接地部の細かい影を表現（凹凸の密度感を改善） */}
         <ContactShadows
           position={CONTACT_SHADOWS.position}

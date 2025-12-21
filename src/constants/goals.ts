@@ -13,7 +13,7 @@ export const GOAL_POSITIONS: Record<StageId, [number, number, number]> = {
   // 迷路ステージ（既存のハードコーディング値を保持）
   stage2: [36.1, 1.5, 36.0],
   // 大きいステージはスケールが3なので、見やすい位置に配置
-  stageL: [10, 3, 10],
+  stageL: [11, 0.5, 11],
 };
 
 export function getScaledGoalPosition(stageId: StageId): [number, number, number] {
