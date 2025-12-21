@@ -21,6 +21,9 @@ export const createGameSlice = (set: SetStateType): Partial<State> => ({
   addScore: (n: number) => set((s: State) => ({ score: s.score + n })),
   resetScore: () => set({ score: 0 }),
 
+  enemyKillCount: 0,
+  incrementKillCount: () => set((s: State) => ({ enemyKillCount: (s.enemyKillCount || 0) + 1 })),
+
   playerHP: 100,
   maxHP: 100,
   takeDamage: (damage: number, reason?: string, time?: number) =>
@@ -49,6 +52,7 @@ export const createGameSlice = (set: SetStateType): Partial<State> => ({
           gameState: 'menu',
           stageId: preserveStage ? s.stageId : DEFAULT_STAGE_ID,
           score: 0,
+          enemyKillCount: 0,
           playerHP: 100,
           maxHP: 100,
           currentAmmo: 30,

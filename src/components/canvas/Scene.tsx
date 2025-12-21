@@ -7,6 +7,7 @@ import Player from './Player';
 import Level from './Level';
 import KeySpawner from './KeySpawner';
 import HeartSpawner from './HeartSpawner';
+import AmmoSpawner from './Items/AmmoSpawner';
 import EnemyManager from './Enemy/EnemyManager';
 import ResetSpot from './ResetSpot';
 import {
@@ -77,6 +78,7 @@ export default function Scene() {
 
         <KeySpawner />
         <HeartSpawner />
+        <AmmoSpawner />
 
         {/* 敵システム */}
         <EnemyManager />

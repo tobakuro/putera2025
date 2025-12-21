@@ -38,6 +38,10 @@ export type State = {
   addScore: (n: number) => void;
   resetScore: () => void;
 
+  // 敵撃破数
+  enemyKillCount?: number;
+  incrementKillCount?: () => void;
+
   // プレイヤー状態
   playerHP: number;
   maxHP: number;

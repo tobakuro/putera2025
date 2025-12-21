@@ -35,7 +35,7 @@ export default function AmmoPanel() {
           <div>
             <div>装備済みの銃アイコン</div>
             <div style={{ marginTop: 6 }}>
-              装弾数: {currentAmmo} / {reserveAmmo}
+              マガジン: {currentAmmo} / 予備弾: {reserveAmmo}
             </div>
           </div>
         </div>
