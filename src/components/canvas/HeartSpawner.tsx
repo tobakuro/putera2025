@@ -76,7 +76,7 @@ function generateStage1Points(
     const z = randBetween(bounds.zMin, bounds.zMax);
     if (isInsideExclude(x, z, exclude)) continue;
     const y = randBetween(bounds.yMin, bounds.yMax);
-    const near = out.some((p) => Math.hypot(p[0] - x, p[2] - z) < 1.0);
+    const near = out.some((p) => Math.hypot(p[0] - x, p[2] - z) < minDistance);
     if (near) continue;
     const nearOther = otherPoints.some((p) => Math.hypot(p[0] - x, p[2] - z) < minDistance);
     if (nearOther) continue;
@@ -109,8 +109,16 @@ export default function HeartSpawner({ count = DEFAULT_HEART_COUNT }: HeartSpawn
   const stageId = useGameStore((s) => s.stageId);
   const gameState = useGameStore((s) => s.gameState);
   const itemResetTrigger = useGameStore((s) => s.itemResetTrigger);
-  const spawnPoints = useMemo(() => getSpawnPointsForStage(stageId, count), [stageId, count]);
-  const [hearts, setHearts] = useState<HeartSpawn[]>(() => createSpawnSet(count, spawnPoints));
+  // For stageL (Metropolis), use a larger default of 8 hearts
+  const effectiveCount = stageId === 'stageL' ? 8 : count;
+
+  const spawnPoints = useMemo(
+    () => getSpawnPointsForStage(stageId, effectiveCount),
+    [stageId, effectiveCount]
+  );
+  const [hearts, setHearts] = useState<HeartSpawn[]>(() =>
+    createSpawnSet(effectiveCount, spawnPoints)
+  );
   const setLastHeartSpawns = useGameStore((s) => s.setLastHeartSpawns);
 
   useEffect(() => {
@@ -120,12 +128,12 @@ export default function HeartSpawner({ count = DEFAULT_HEART_COUNT }: HeartSpawn
   useEffect(() => {
     if (gameState !== 'playing') return;
     const timer = window.setTimeout(() => {
-      const pts = getSpawnPointsForStage(stageId, count);
-      setHearts(createSpawnSet(count, pts));
+      const pts = getSpawnPointsForStage(stageId, effectiveCount);
+      setHearts(createSpawnSet(effectiveCount, pts));
       useGameStore.getState().setLastHeartSpawns(pts.map((p) => ({ x: p[0], y: p[1], z: p[2] })));
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [count, gameState, itemResetTrigger, stageId]);
+  }, [count, gameState, itemResetTrigger, stageId, effectiveCount]);
   const handlePickup = useCallback(
     (id: string) => {
       setHearts((prev) => prev.map((h) => (h.id === id ? { ...h, collected: true } : h)));
@@ -152,6 +160,7 @@ type HeartInstanceProps = {
 function HeartInstance({ data, onCollect, gameState }: HeartInstanceProps) {
   const { id, position, collected } = data;
   const groupRef = useRef<THREE.Group>(null);
+  const processedRef = useRef(false);
 
   useFrame(({ clock }) => {
     // ゲームが再生中でなければアニメーション停止
@@ -165,7 +174,9 @@ function HeartInstance({ data, onCollect, gameState }: HeartInstanceProps) {
   const handleEnter = useCallback(
     ({ other }: { other: { rigidBodyObject?: { name?: string } } }) => {
       if (collected) return;
+      if (processedRef.current) return;
       if (other.rigidBodyObject?.name !== 'player') return;
+      processedRef.current = true;
       onCollect(id);
     },
     [collected, id, onCollect]
