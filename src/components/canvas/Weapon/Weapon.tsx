@@ -90,6 +90,9 @@ export default function Weapon({ playerRef, isShooting, cameraRotationRef }: Wea
 
   return (
     <>
+      {/* 1人称視点の武器モデル */}
+      <WeaponModel camera={camera} />
+
       {bullets.current.map((bullet) => (
         <Bullet key={bullet.id} startPosition={bullet.startPosition} direction={bullet.direction} />
       ))}
@@ -192,3 +195,38 @@ function Bullet({ startPosition, direction }: BulletProps) {
 
 // preload model for smoother first render
 useGLTF.preload('/models/3D/glb/dangan/dangan.glb');
+
+type WeaponModelProps = {
+  camera: THREE.Camera;
+};
+
+function WeaponModel({ camera }: WeaponModelProps) {
+  const WEAPON_MODEL_PATH = '/models/3D/glb/gun/gun_only.glb';
+  const { scene } = useGLTF(WEAPON_MODEL_PATH) as { scene: THREE.Group };
+  const weaponRef = useRef<THREE.Group>(null);
+  const cameraMode = useGameStore((s) => s.cameraMode);
+
+  useFrame(() => {
+    if (!weaponRef.current) return;
+
+    // カメラの位置と回転に追従
+    weaponRef.current.position.copy(camera.position);
+    weaponRef.current.rotation.copy(camera.rotation);
+
+    // 画面右下にオフセット（より右でさらに下に配置、さらに手前に）
+    const rightOffset = new THREE.Vector3(0.5, -0.4, -0.1);
+    rightOffset.applyQuaternion(camera.quaternion);
+    weaponRef.current.position.add(rightOffset);
+
+    // 銃口部分だけが見えるように回転調整
+    weaponRef.current.rotateX(0.1);
+    weaponRef.current.rotateY(0.2 + Math.PI + Math.PI / 2 + Math.PI); // Y軸にさらに180度
+    weaponRef.current.rotateZ(-Math.PI / 2 + Math.PI / 2); // Z軸にさらに90度
+  });
+
+  return (
+    <group ref={weaponRef} scale={[0.04, 0.04, 0.04]}>
+      {cameraMode === 'first' && <primitive object={scene.clone()} />}
+    </group>
+  );
+}
