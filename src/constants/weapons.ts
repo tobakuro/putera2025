@@ -12,3 +12,4 @@ export const BULLET_RADIUS = 0.05; //弾の半径
 //敵の弾の定数
 export const ENEMY_BULLET_SPEED = 10; //敵の弾の速度（プレイヤーより遅い）
 export const ENEMY_BULLET_LIFETIME = 10; //敵の弾が消えるまでの時間（秒）
+export const ENEMY_BULLET_SCALE = 0.5; //敵の弾のスケール（プレイヤーより大きい）

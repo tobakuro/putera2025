@@ -48,11 +48,6 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
     if (!bodyRef.current) return;
 
     const enemyPos = bodyRef.current.translation();
-    const startPosition = new THREE.Vector3(
-      enemyPos.x,
-      enemyPos.y + 1.5, // 敵の胸の高さから発射
-      enemyPos.z
-    );
 
     // プレイヤーへの方向を計算
     const direction = new THREE.Vector3(
@@ -60,6 +55,15 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
       playerPosition.y - enemyPos.y,
       playerPosition.z - enemyPos.z
     ).normalize();
+
+    // 発射位置: 敵の胸の高さから、プレイヤー方向に1m前方にオフセット
+    // これにより弾が敵のコライダーと重ならないようにする
+    const forwardOffset = direction.clone().multiplyScalar(1.0);
+    const startPosition = new THREE.Vector3(
+      enemyPos.x + forwardOffset.x,
+      enemyPos.y + 1.5 + forwardOffset.y, // 敵の胸の高さから発射
+      enemyPos.z + forwardOffset.z
+    );
 
     const bulletData: EnemyBulletData = {
       id: enemyBulletIdCounter++,

@@ -1,9 +1,13 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { RigidBody, RapierRigidBody, interactionGroups } from '@react-three/rapier';
+import { RigidBody, RapierRigidBody, interactionGroups, BallCollider } from '@react-three/rapier';
 import * as THREE from 'three';
 import { useGLTF } from '@react-three/drei';
-import { ENEMY_BULLET_SPEED, ENEMY_BULLET_LIFETIME } from '../../../constants/weapons';
+import {
+  ENEMY_BULLET_SPEED,
+  ENEMY_BULLET_LIFETIME,
+  ENEMY_BULLET_SCALE,
+} from '../../../constants/weapons';
 import useGameStore from '../../../stores/useGameStore';
 
 type EnemyBulletProps = {
@@ -97,7 +101,7 @@ export default function EnemyBullet({
   return (
     <RigidBody
       ref={bulletRef}
-      colliders="ball"
+      colliders={false} // 手動でコライダーを設定
       mass={0.01}
       position={[startPosition.x, startPosition.y, startPosition.z]}
       gravityScale={0}
@@ -108,8 +112,11 @@ export default function EnemyBullet({
       collisionGroups={interactionGroups(3, [0, 1])} // グループ3（敵の弾丸）: 地形・プレイヤーと衝突、敵とは衝突しない
       onCollisionEnter={handleCollision}
     >
+      {/* スケールに合わせた球コライダー */}
+      <BallCollider args={[ENEMY_BULLET_SCALE * 0.5]} />
+
       {/* visualRef を使って毎フレームカメラ方向に底面を向ける */}
-      <group ref={visualRef} scale={[0.2, 0.2, 0.2]}>
+      <group ref={visualRef} scale={[ENEMY_BULLET_SCALE, ENEMY_BULLET_SCALE, ENEMY_BULLET_SCALE]}>
         <primitive object={cloned} />
       </group>
     </RigidBody>
