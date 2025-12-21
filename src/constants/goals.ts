@@ -7,9 +7,9 @@ import { STAGE_SCALE } from './stages';
 // 参照して乗算して使います。
 export const GOAL_POSITIONS: Record<StageId, [number, number, number]> = {
   // 既存デフォルトステージ
-  stage0: [0, 1.5, 0],
+  stage0: [26, 1.5, 24],
   // stage1 のモデル内で手前〜奥のあたりに配置（小さい調整可）
-  stage1: [0, 3, 28],
+  stage1: [-27, 1.5, -23],
   // 迷路ステージ（既存のハードコーディング値を保持）
   stage2: [36.1, 1.5, 36.0],
   // 大きいステージはスケールが3なので、見やすい位置に配置
@@ -19,5 +19,9 @@ export const GOAL_POSITIONS: Record<StageId, [number, number, number]> = {
 export function getScaledGoalPosition(stageId: StageId): [number, number, number] {
   const p = GOAL_POSITIONS[stageId] ?? [0, 1.5, 0];
   const scale = STAGE_SCALE[stageId] ?? 1;
+  if (stageId === 'stage1') {
+    // Stage1 はスケール済みモデル上でワールド座標を直接指定する
+    return p;
+  }
   return [p[0] * scale, p[1] * scale, p[2] * scale];
 }
