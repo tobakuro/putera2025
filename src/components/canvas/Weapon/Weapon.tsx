@@ -36,6 +36,14 @@ export default function Weapon({ playerRef, isShooting, cameraRotationRef }: Wea
   const prevShootingRef = useRef(false);
   const gameState = useGameStore((s) => s.gameState);
 
+  // 銃声のAudioオブジェクトを作成
+  const shootSound = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    const audio = new Audio('/sounds/銃声２.mp3');
+    audio.volume = 0.3;
+    return audio;
+  }, []);
+
   // 弾が消える処理(発射されてから消えるまでの時間は定数をいじってね)
   useFrame((state) => {
     if (gameState !== 'playing') return;
@@ -62,6 +70,12 @@ export default function Weapon({ playerRef, isShooting, cameraRotationRef }: Wea
 
   const shoot = (currentTime: number) => {
     if (!playerRef.current || !cameraRotationRef.current) return;
+
+    // 銃声を再生
+    if (shootSound) {
+      shootSound.currentTime = 0; // 連続で撃った時に最初から再生されるようにする
+      shootSound.play().catch((e) => console.warn('Audio play failed:', e));
+    }
 
     // レイキャストを使用して画面中央（クロスヘア）から発射方向を計算
     const raycaster = new THREE.Raycaster();
