@@ -2,6 +2,7 @@
 import React from 'react';
 import HealthPanel from './HealthPanel';
 import KeyPanel from './KeyPanel';
+import ScorePanel from './ScorePanel';
 import AmmoPanel from './AmmoPanel';
 import Crosshair from './Crosshair';
 import SettingsButton from './SettingsButton';
@@ -24,6 +25,7 @@ export default function HUD() {
     <div style={containerStyle}>
       <HealthPanel />
       <KeyPanel />
+      <ScorePanel />
       <AmmoPanel />
       <Crosshair />
       <SettingsButton />
