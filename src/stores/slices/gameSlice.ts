@@ -1,5 +1,6 @@
 import type { StageId, State } from '../useGameStore';
 import type { StoreApi } from 'zustand';
+import { INITIAL_CURRENT_AMMO, INITIAL_RESERVE_AMMO, MAX_AMMO } from '../../constants/weapons';
 
 type SetStateType = StoreApi<State>['setState'];
 
@@ -55,9 +56,9 @@ export const createGameSlice = (set: SetStateType): Partial<State> => ({
           enemyKillCount: 0,
           playerHP: 100,
           maxHP: 100,
-          currentAmmo: 30,
-          maxAmmo: 30,
-          reserveAmmo: 90,
+          currentAmmo: INITIAL_CURRENT_AMMO,
+          maxAmmo: MAX_AMMO,
+          reserveAmmo: INITIAL_RESERVE_AMMO,
           keysCollected: 0,
           totalKeys: 1,
           enemies: [],
