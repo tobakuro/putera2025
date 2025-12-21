@@ -30,4 +30,4 @@ export const CAMERA_HEIGHT = 1.0; // 単位: m
 export const CAMERA_BACK_OFFSET = -3.2; // 正の値で後方へ
 
 // 歩行アニメの再生速度倍率（1.0 = 元の速度）
-export const WALK_SPEED = 1.6;
+export const WALK_SPEED = 2.0;

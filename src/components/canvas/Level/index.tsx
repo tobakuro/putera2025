@@ -5,6 +5,7 @@ import MazeStage from '../../models/levels/MazeStage';
 import { Model as StageLModel } from '../../models/levels/StageL';
 import useGameStore from '../../../stores/useGameStore';
 import { STAGE_SCALE } from '../../../constants/stages';
+import { KeyholeGoal } from '../../models/KeyholeGoal';
 
 export default function Level() {
   const stageId = useGameStore((s) => s.stageId);
@@ -23,6 +24,9 @@ export default function Level() {
       ) : (
         <Stage0Model scale={scale} />
       )}
+
+      {/* すべての非迷路ステージでゴールを出現させる（MazeStage は内部で既に配置している） */}
+      <KeyholeGoal />
     </RigidBody>
   );
 }
