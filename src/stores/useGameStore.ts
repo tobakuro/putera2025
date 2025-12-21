@@ -38,6 +38,10 @@ export type State = {
   addScore: (n: number) => void;
   resetScore: () => void;
 
+  // 敵撃破数
+  enemyKillCount?: number;
+  incrementKillCount?: () => void;
+
   // プレイヤー状態
   playerHP: number;
   maxHP: number;
@@ -96,6 +100,10 @@ export type State = {
   cameraMode: 'third' | 'first';
   setCameraMode: (mode: 'third' | 'first') => void;
   toggleCameraMode: () => void;
+  // 終了種別: クリア時は true
+  isClear?: boolean;
+  // クリア処理を実行
+  clearGame?: (time?: number) => void;
 };
 
 export const useGameStore = create<State>(

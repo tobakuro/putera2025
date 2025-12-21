@@ -98,6 +98,8 @@ export default function Player() {
   const gameState = useGameStore((s) => s.gameState);
   const cameraMode = useGameStore((s) => s.cameraMode);
   const toggleCameraMode = useGameStore((s) => s.toggleCameraMode);
+  const reload = useGameStore((s) => s.reload);
+  const prevReloadRef = useRef(false);
 
   // ポインターロックの設定
   useEffect(() => {
@@ -226,6 +228,13 @@ export default function Player() {
     }
     prevJumpRef.current = keys.jump;
 
+    // リロード処理（立ち上がり検出）
+    const reloadRising = keys.reload && !prevReloadRef.current;
+    if (reloadRising) {
+      reload();
+    }
+    prevReloadRef.current = keys.reload;
+
     // カメラの位置と回転を更新
     // cameraMode に応じて一人称/三人称を切り替える
     let camOffset: THREE.Vector3;
@@ -272,8 +281,8 @@ export default function Player() {
         position={spawn}
         enabledRotations={[false, false, false]}
         linearDamping={0.5}
-        userData={{ isPlayer: true }}
-        collisionGroups={interactionGroups(1, [0, 3, 4, 5])} // グループ1（プレイヤー）: 地形・敵と衝突、弾丸（グループ2）とは衝突しない
+        userData={{ isPlayer: true, type: 'player' }}
+        collisionGroups={interactionGroups(1, [0, 3, 4, 5])} // グループ1（プレイヤー）: 地形・敵・敵の弾丸と衝突、プレイヤーの弾丸（グループ2）とは衝突しない
       >
         {/* 人型に適したカプセルコライダー（縦長の円柱＋半球） */}
         {/* args: [halfHeight, radius] - カプセルの中心円柱の半分の高さと半径 */}

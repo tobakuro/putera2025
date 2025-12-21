@@ -1,11 +1,15 @@
 import type { StageId, State } from '../useGameStore';
 import type { StoreApi } from 'zustand';
+import { INITIAL_CURRENT_AMMO, INITIAL_RESERVE_AMMO, MAX_AMMO } from '../../constants/weapons';
 
 type SetStateType = StoreApi<State>['setState'];
 
 export const createGameSlice = (set: SetStateType): Partial<State> => ({
   gameState: 'menu',
   setGameState: (gameState: 'menu' | 'playing' | 'paused' | 'gameover') => set({ gameState }),
+
+  // クリアフラグ
+  isClear: false,
 
   stageId: 'stage0',
   setStageId: (stageId: StageId) => set({ stageId, keysCollected: 0, totalKeys: 0 }),
@@ -17,6 +21,9 @@ export const createGameSlice = (set: SetStateType): Partial<State> => ({
   score: 0,
   addScore: (n: number) => set((s: State) => ({ score: s.score + n })),
   resetScore: () => set({ score: 0 }),
+
+  enemyKillCount: 0,
+  incrementKillCount: () => set((s: State) => ({ enemyKillCount: (s.enemyKillCount || 0) + 1 })),
 
   playerHP: 100,
   maxHP: 100,
@@ -31,6 +38,8 @@ export const createGameSlice = (set: SetStateType): Partial<State> => ({
         deathReason: isDead ? (reason ?? 'Unknown') : (s.deathReason ?? null),
         deathTime: isDead ? (time ?? null) : (s.deathTime ?? null),
         deathKeys: isDead ? (s.keysCollected ?? 0) : (s.deathKeys ?? null),
+        // 死亡はクリアではない
+        isClear: false,
       } as Partial<State>;
     }),
   heal: (amount: number) =>
@@ -44,11 +53,12 @@ export const createGameSlice = (set: SetStateType): Partial<State> => ({
           gameState: 'menu',
           stageId: preserveStage ? s.stageId : DEFAULT_STAGE_ID,
           score: 0,
+          enemyKillCount: 0,
           playerHP: 100,
           maxHP: 100,
-          currentAmmo: 30,
-          maxAmmo: 30,
-          reserveAmmo: 90,
+          currentAmmo: INITIAL_CURRENT_AMMO,
+          maxAmmo: MAX_AMMO,
+          reserveAmmo: INITIAL_RESERVE_AMMO,
           keysCollected: 0,
           totalKeys: 1,
           enemies: [],
@@ -60,10 +70,22 @@ export const createGameSlice = (set: SetStateType): Partial<State> => ({
           deathReason: null,
           deathTime: null,
           deathKeys: null,
-          cameraMode: 'third',
+          // デフォルトで一人称視点で開始する
+          cameraMode: 'first',
+          isClear: false,
         }) as Partial<State>
     );
   },
+
+  // クリア処理（鍵を揃った状態でゴールに触れたときに呼ぶ）
+  clearGame: (time?: number) =>
+    set((s: State) => ({
+      gameState: 'gameover',
+      isClear: true,
+      deathReason: 'Clear',
+      deathTime: time ?? null,
+      deathKeys: s.keysCollected ?? 0,
+    })),
 });
 
 export default createGameSlice;

@@ -9,6 +9,7 @@ import { useGraph } from '@react-three/fiber';
 import { useGLTF, useAnimations } from '@react-three/drei';
 import { GLTF, SkeletonUtils } from 'three-stdlib';
 import { WALK_SPEED } from '../../../constants/player';
+import { EnergyWeapon } from '../weapons/EnergyWeapon';
 
 // Minimal GroupProps shape to avoid relying on the global JSX namespace.
 export type GroupProps = {
@@ -43,12 +44,54 @@ export function Model(props: GroupProps) {
   const { play, ...groupProps } = props;
   // useRef must be initialized; allow null until mounted
   const group = React.useRef<THREE.Group | null>(null);
+  const weaponRef = React.useRef<THREE.Group | null>(null);
   const { scene, animations } = useGLTF('/models/3D/glb/hitogata/hitogata_move.glb');
   const clone = React.useMemo(() => SkeletonUtils.clone(scene), [scene]);
   // useGraph returns a generic map; cast via unknown to satisfy TS for now
   const { nodes, materials } = useGraph(clone) as unknown as GLTFResult;
   // cast group ref to a looser Object3D ref for useAnimations
   const { actions } = useAnimations(animations, group as React.RefObject<THREE.Object3D>);
+
+  // 右手のボーンを見つけて武器をアタッチ
+  React.useEffect(() => {
+    if (!group.current || !weaponRef.current) return;
+
+    // ボーン構造から右手（右下腕）のボーンを探す
+    const bones: THREE.Object3D[] = [];
+    group.current.traverse((child) => {
+      if (child instanceof THREE.Bone) {
+        // このモデルのボーン名: lowerArmR (右下腕)
+        const name = child.name.toLowerCase();
+        if (
+          name === 'lowerarmr' ||
+          name === 'lowerarm_r' ||
+          name === 'lowerarm.r' ||
+          (name.includes('hand') && name.includes('r')) ||
+          (name.includes('right') && name.includes('hand')) ||
+          name === 'hand.r' ||
+          name === 'hand_r' ||
+          name === 'righthand' ||
+          name.includes('手.r') ||
+          name.includes('右手')
+        ) {
+          bones.push(child);
+        }
+      }
+    });
+
+    // 右手のボーンが見つかったら武器をアタッチ
+    const rightHandBone = bones[0];
+    const weaponGroup = weaponRef.current;
+
+    if (rightHandBone && weaponGroup) {
+      rightHandBone.add(weaponGroup);
+
+      return () => {
+        // クリーンアップ: 武器を削除
+        rightHandBone.remove(weaponGroup);
+      };
+    }
+  }, []);
 
   // 再生/停止の切り替え
   React.useEffect(() => {
@@ -108,6 +151,14 @@ export function Model(props: GroupProps) {
           />
         </group>
       </group>
+      {/* 武器を右手にアタッチ（位置・回転は右手ボーンに対する相対位置） */}
+      <EnergyWeapon
+        ref={weaponRef}
+        level={4}
+        position={[0, -0.3, 0]}
+        rotation={[Math.PI / 2, 0, 0]}
+        scale={0.8}
+      />
     </group>
   );
 }

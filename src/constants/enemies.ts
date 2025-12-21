@@ -17,8 +17,8 @@ export interface EnemyStats {
 export const ENEMY_STATS: Record<EnemyType, EnemyStats> = {
   basic: {
     maxHealth: 4,
-    speed: 2.5,
-    damage: 10,
+    speed: 3.0,
+    damage: 20,
     attackRange: 2.0,
     detectionRange: 20,
     size: [1, 1.5, 1],
@@ -28,7 +28,7 @@ export const ENEMY_STATS: Record<EnemyType, EnemyStats> = {
   fast: {
     maxHealth: 2,
     speed: 6.0,
-    damage: 5,
+    damage: 10,
     attackRange: 2.0,
     detectionRange: 25,
     size: [0.7, 1.2, 0.7],
@@ -41,24 +41,21 @@ export const ENEMY_STATS: Record<EnemyType, EnemyStats> = {
     damage: 25,
     attackRange: 3.0,
     detectionRange: 15,
-    size: [1.5, 2.0, 1.5],
+    size: [3.0, 4.0, 3.0],
     color: '#4444ff',
     scoreValue: 300,
   },
   sniper: {
     maxHealth: 1,
     speed: 2.0,
-    damage: 30,
-    attackRange: 15,
-    detectionRange: 35,
+    damage: 20,
+    attackRange: 30,
+    detectionRange: 100,
     size: [0.8, 1.8, 0.8],
     color: '#ff44ff',
     scoreValue: 200,
   },
 };
-
-// デフォルトの敵タイプ
-export const DEFAULT_ENEMY_TYPE: EnemyType = 'sniper';
 
 // 敵のスポーン設定
 export const ENEMY_SPAWN_INTERVAL = 5; // 秒
