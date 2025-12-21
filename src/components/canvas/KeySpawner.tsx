@@ -80,7 +80,7 @@ function generateStage1Points(
     if (isInsideExclude(rx, rz, exclude)) continue;
     const y = randBetween(bounds.yMin, bounds.yMax);
     // avoid near-duplicates among generated
-    const near = out.some((p) => Math.hypot(p[0] - x, p[2] - z) < 1.0);
+    const near = out.some((p) => Math.hypot(p[0] - x, p[2] - z) < minDistance);
     if (near) continue;
     // avoid proximity to otherPoints (e.g., hearts)
     const nearOther = otherPoints.some((p) => Math.hypot(p[0] - x, p[2] - z) < minDistance);
@@ -94,11 +94,31 @@ function generateStage1Points(
 const STAGE1_BOUNDS = { xMin: -28, xMax: 28, zMin: -27, zMax: 27, yMin: -0.5, yMax: 1 };
 const STAGE1_EXCLUDE: Rect = { xMin: -12, xMax: -11, zMin: 23, zMax: 27 };
 
+// Default bounds for stage0. Adjust these values to change the spawn area for stage0.
+// Updated per request: xMax=30, xMin=-35, zMax=32, zMin=-29, y=0
+const STAGE0_BOUNDS = { xMin: -35, xMax: 30, zMin: -29, zMax: 32, yMin: 0, yMax: 0 };
+const STAGE0_EXCLUDE: Rect = { xMin: 0, xMax: 0, zMin: 0, zMax: 0 };
+// StageL (Metropolis) bounds provided by user
+const STAGEL_BOUNDS = { xMin: -240, xMax: 240, zMin: -240, zMax: 240, yMin: 0, yMax: 0 };
+const STAGEL_EXCLUDE: Rect = { xMin: 0, xMax: 0, zMin: 0, zMax: 0 };
+
 function getSpawnPointsForStage(id: string, num: number) {
   if (id === 'stage1') {
     const other = useGameStore.getState().lastHeartSpawns || [];
     const otherPts: [number, number, number][] = other.map((p) => [p.x, p.y, p.z]);
     return generateStage1Points(num, STAGE1_BOUNDS, STAGE1_EXCLUDE, otherPts, 1.8);
+  }
+  // For stage0, generate points inside a rectangular bounds similar to stage1
+  if (id === 'stage0') {
+    const other = useGameStore.getState().lastHeartSpawns || [];
+    const otherPts: [number, number, number][] = other.map((p) => [p.x, p.y, p.z]);
+    return generateStage1Points(num, STAGE0_BOUNDS, STAGE0_EXCLUDE, otherPts, 1.8);
+  }
+  // For stageL (Metropolis), generate inside large rectangular bounds
+  if (id === 'stageL') {
+    const other = useGameStore.getState().lastHeartSpawns || [];
+    const otherPts: [number, number, number][] = other.map((p) => [p.x, p.y, p.z]);
+    return generateStage1Points(num, STAGEL_BOUNDS, STAGEL_EXCLUDE, otherPts, 1.8);
   }
   const pts = KEY_SPAWN_BY_STAGE[id] ?? KEY_SPAWN_BY_STAGE['stage0'];
   return shuffle(pts).slice(0, Math.min(num, pts.length));
@@ -114,7 +134,6 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
   const collectKey = useGameStore((s) => s.collectKey);
   const setTotalKeys = useGameStore((s) => s.setTotalKeys);
   const resetKeys = useGameStore((s) => s.resetKeys);
-  const keysCollected = useGameStore((s) => s.keysCollected);
   const gameState = useGameStore((s) => s.gameState);
   const itemResetTrigger = useGameStore((s) => s.itemResetTrigger);
   const prevGameStateRef = useRef(gameState);
@@ -123,14 +142,26 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
   // Maze (stage2) should only spawn a single key
   const effectiveCount = stageId === 'stage2' ? 1 : count;
 
-  // Desired number to spawn considering player's held keys
-  const desiredCount = Math.max(0, Math.min(effectiveCount, MAX_KEYS - keysCollected));
-
+  // Determine spawn points for the full effective count (do not shrink on pickup)
   const spawnPoints = useMemo(
-    () => getSpawnPointsForStage(stageId, desiredCount),
-    [stageId, desiredCount]
+    () => getSpawnPointsForStage(stageId, effectiveCount),
+    [stageId, effectiveCount]
   );
-  const [keys, setKeys] = useState<KeySpawn[]>(() => createSpawnSet(desiredCount, spawnPoints));
+  const [keys, setKeys] = useState<KeySpawn[]>(() =>
+    createSpawnSet(Math.min(effectiveCount, spawnPoints.length), spawnPoints)
+  );
+
+  // Debug logs: show spawnPoints and keys state changes
+  useEffect(() => {
+    console.log('[KeySpawner] spawnPoints', spawnPoints);
+  }, [spawnPoints]);
+
+  useEffect(() => {
+    console.log(
+      '[KeySpawner] keys state changed:',
+      keys.map((k) => ({ id: k.id, pos: k.position, collected: k.collected }))
+    );
+  }, [keys]);
   const setLastKeySpawns = useGameStore((s) => s.setLastKeySpawns);
 
   // publish initial key spawn positions to store for other spawners
@@ -143,14 +174,11 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
       prevGameStateRef.current = gameState;
       return;
     }
-    // Only reset keys when entering playing from menu or gameover (new session)
+    // Only regenerate keys when entering playing from menu/gameover or when an explicit item reset is triggered.
     const prev = prevGameStateRef.current;
     const timer = window.setTimeout(() => {
-      const pts = getSpawnPointsForStage(stageId, desiredCount);
-      const spawnCount = Math.max(
-        0,
-        Math.min(effectiveCount, MAX_KEYS - useGameStore.getState().keysCollected, pts.length)
-      );
+      const pts = getSpawnPointsForStage(stageId, effectiveCount);
+      const spawnCount = Math.max(0, Math.min(effectiveCount, pts.length));
       setKeys(createSpawnSet(spawnCount, pts));
       // publish to store for hearts to avoid
       useGameStore.getState().setLastKeySpawns(pts.map((p) => ({ x: p[0], y: p[1], z: p[2] })));
@@ -160,17 +188,13 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
     }, 0);
     prevGameStateRef.current = gameState;
     return () => window.clearTimeout(timer);
-  }, [count, gameState, resetKeys, itemResetTrigger, stageId, desiredCount, effectiveCount]);
+  }, [count, gameState, resetKeys, itemResetTrigger, stageId, effectiveCount]);
 
   // Update total keys whenever map/held counts change
   useEffect(() => {
-    if (stageId === 'stage2') {
-      // Maze requires only one key
-      setTotalKeys(effectiveCount);
-    } else {
-      setTotalKeys(keys.length + keysCollected);
-    }
-  }, [keys.length, keysCollected, setTotalKeys, stageId, effectiveCount]);
+    // totalKeys is the target number of keys to collect in this stage
+    setTotalKeys(effectiveCount);
+  }, [setTotalKeys, stageId, effectiveCount]);
 
   // On unmount (leaving the spawner), reset totals and held keys
   useEffect(() => {
@@ -182,6 +206,10 @@ export default function KeySpawner({ count = MAX_KEYS }: KeySpawnerProps) {
 
   const handlePickup = useCallback(
     (id: string) => {
+      console.log('[KeySpawner] handlePickup called', {
+        id,
+        beforeKeysCollected: useGameStore.getState().keysCollected,
+      });
       setKeys((prev) => prev.map((key) => (key.id === id ? { ...key, collected: true } : key)));
       collectKey();
     },
@@ -206,6 +234,7 @@ type KeyInstanceProps = {
 function KeyInstance({ data, onCollect, gameState }: KeyInstanceProps) {
   const { id, position, collected } = data;
   const groupRef = useRef<THREE.Group>(null);
+  const processedRef = useRef(false);
 
   useFrame(({ clock }) => {
     // ゲームが再生中でなければアニメーション停止
@@ -219,8 +248,10 @@ function KeyInstance({ data, onCollect, gameState }: KeyInstanceProps) {
   const handleEnter = useCallback(
     ({ other }: { other?: { rigidBodyObject?: { name?: string } } }) => {
       if (collected) return;
+      if (processedRef.current) return;
       // First try the rapier-provided object name check
       if (other?.rigidBodyObject?.name === 'player') {
+        processedRef.current = true;
         onCollect(id);
         return;
       }
@@ -231,6 +262,7 @@ function KeyInstance({ data, onCollect, gameState }: KeyInstanceProps) {
         const dz = playerPos.z - position[2];
         const dist = Math.hypot(dx, dz);
         if (dist < 1.5) {
+          processedRef.current = true;
           onCollect(id);
         }
       }

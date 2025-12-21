@@ -63,7 +63,7 @@ export default function HealthPanel() {
   const posText = `${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)}`;
 
   const hpPercent = maxHP > 0 ? Math.round((playerHP / maxHP) * 100) : 0;
-  const hpBlocks = Math.max(0, Math.min(12, Math.round((hpPercent / 100) * 12)));
+  const hpBlocks = Math.max(0, Math.min(10, Math.round((hpPercent / 100) * 10)));
   const hpBar = '■'.repeat(hpBlocks);
 
   const panelStyle: React.CSSProperties = {

@@ -98,6 +98,8 @@ export default function Player() {
   const gameState = useGameStore((s) => s.gameState);
   const cameraMode = useGameStore((s) => s.cameraMode);
   const toggleCameraMode = useGameStore((s) => s.toggleCameraMode);
+  const reload = useGameStore((s) => s.reload);
+  const prevReloadRef = useRef(false);
 
   // ポインターロックの設定
   useEffect(() => {
@@ -225,6 +227,13 @@ export default function Player() {
       playerRef.current.applyImpulse({ x: 0, y: JUMP_FORCE, z: 0 }, true);
     }
     prevJumpRef.current = keys.jump;
+
+    // リロード処理（立ち上がり検出）
+    const reloadRising = keys.reload && !prevReloadRef.current;
+    if (reloadRising) {
+      reload();
+    }
+    prevReloadRef.current = keys.reload;
 
     // カメラの位置と回転を更新
     // cameraMode に応じて一人称/三人称を切り替える

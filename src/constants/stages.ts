@@ -9,11 +9,11 @@ export const STAGE_SCALE: Record<StageId, number> = {
 };
 
 export const STAGE_SPAWN: Record<StageId, [number, number, number]> = {
-  stage0: [0, 5, 0],
-  stage1: [0, 8, 10],
-  stage2: [-30, 5, -30],
+  stage0: [0, 0.1, 0],
+  stage1: [-8, 0.1, 13],
+  stage2: [-30, 0.1, -30],
   // メトロポリスのデフォルトスポーン（必要に応じて調整）
-  stageL: [0, 8, 0],
+  stageL: [0, 0.1, 0],
 };
 
 // 敵のスポーン地点（各ステージに複数の候補位置）
