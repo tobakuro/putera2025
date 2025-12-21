@@ -35,6 +35,7 @@ export default function Weapon({ playerRef, isShooting, cameraRotationRef }: Wea
   const lastShotTime = useRef(0);
   const prevShootingRef = useRef(false);
   const gameState = useGameStore((s) => s.gameState);
+  const shootAmmo = useGameStore((s) => s.shoot);
 
   // 弾が消える処理(発射されてから消えるまでの時間は定数をいじってね)
   useFrame((state) => {
@@ -62,6 +63,10 @@ export default function Weapon({ playerRef, isShooting, cameraRotationRef }: Wea
 
   const shoot = (currentTime: number) => {
     if (!playerRef.current || !cameraRotationRef.current) return;
+
+    // 弾薬を消費できるかチェック
+    const fired = shootAmmo();
+    if (!fired) return; // 弾薬がない場合は発射しない
 
     // レイキャストを使用して画面中央（クロスヘア）から発射方向を計算
     const raycaster = new THREE.Raycaster();
