@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import { useGLTF } from '@react-three/drei';
-import useGameStore from '../../stores/useGameStore';
+import useGameStore, { type StageId } from '../../stores/useGameStore';
 
 const HEART_MODEL_PATH = '/models/3D/glb/ha-to/kaihuku_ha-to_move.glb';
 
@@ -24,6 +24,13 @@ const HEART_SPAWN_BY_STAGE: Record<string, [number, number, number][]> = {
 };
 const DEFAULT_HEART_COUNT = 2;
 const HEAL_AMOUNT = 25;
+
+const HEART_COUNT_BY_STAGE: Partial<Record<StageId, number>> = {
+  stage0: 1,
+  stage1: 1,
+  stage2: 1,
+  stageL: 8,
+};
 
 function shuffle<T>(input: T[]): T[] {
   const arr = [...input];
@@ -109,8 +116,8 @@ export default function HeartSpawner({ count = DEFAULT_HEART_COUNT }: HeartSpawn
   const stageId = useGameStore((s) => s.stageId);
   const gameState = useGameStore((s) => s.gameState);
   const itemResetTrigger = useGameStore((s) => s.itemResetTrigger);
-  // For stageL (Metropolis), use a larger default of 8 hearts
-  const effectiveCount = stageId === 'stageL' ? 8 : count;
+  const stageDefault = HEART_COUNT_BY_STAGE[stageId] ?? count;
+  const effectiveCount = stageDefault ?? DEFAULT_HEART_COUNT;
 
   const spawnPoints = useMemo(
     () => getSpawnPointsForStage(stageId, effectiveCount),
