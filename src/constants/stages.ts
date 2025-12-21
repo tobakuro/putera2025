@@ -16,6 +16,13 @@ export const STAGE_SPAWN: Record<StageId, [number, number, number]> = {
   stageL: [0, 0.1, 0],
 };
 
+// Reset spot positions per stage. If a stage is not present here, no reset spot will be shown.
+export const RESET_SPOTS: Partial<Record<StageId, [number, number, number]>> = {
+  stage0: [2.8, 0.1, -6],
+  stage1: [6, 0.1, 18],
+  stageL: [31, 0.1, -31],
+};
+
 // 敵のスポーン地点（各ステージに複数の候補位置）
 export const ENEMY_SPAWN_POINTS: Record<StageId, [number, number, number][]> = {
   stage0: [
