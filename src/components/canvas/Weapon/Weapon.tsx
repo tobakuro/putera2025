@@ -113,6 +113,7 @@ function Bullet({ startPosition, direction }: BulletProps) {
   const [hasHit, setHasHit] = useState(false);
   const updateEnemyHealth = useGameStore((s) => s.updateEnemyHealth);
   const addScore = useGameStore((s) => s.addScore);
+  const incrementKillCount = useGameStore((s) => s.incrementKillCount);
 
   const MODEL_PATH = '/models/3D/glb/dangan/dangan.glb';
   const { scene } = useGLTF(MODEL_PATH) as { scene: THREE.Group };
@@ -137,6 +138,10 @@ function Bullet({ startPosition, direction }: BulletProps) {
         if (newHealth <= 0) {
           const scoreValue = ENEMY_STATS[enemy.type].scoreValue;
           addScore(scoreValue);
+          // 敵を倒したときにキルカウンターを増やす
+          if (incrementKillCount) {
+            incrementKillCount();
+          }
         }
       }
     }
