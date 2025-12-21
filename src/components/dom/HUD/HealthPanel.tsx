@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 // Use native img for HUD icons to avoid next/image issues
 import useGameStore from '../../../stores/useGameStore';
+import { getStageDisplayName } from '../../../constants/stageDisplayNames';
 
 export default function HealthPanel() {
   const playerHP = useGameStore((s) => s.playerHP);
@@ -76,11 +77,29 @@ export default function HealthPanel() {
     boxSizing: 'border-box',
   };
 
+  const stageBadgeStyle: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '2px 8px',
+    borderRadius: 999,
+    background: 'rgba(0,0,0,0.06)',
+    border: '1px solid rgba(0,0,0,0.12)',
+    color: '#222',
+    fontSize: 12,
+    fontWeight: 700,
+    lineHeight: 1.2,
+    marginBottom: 8,
+    maxWidth: '100%',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  };
+
   return (
     <div style={{ position: 'absolute', left: 16, top: 16 }}>
       <div style={panelStyle}>
         {gameState === 'playing' && (
-          <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 6 }}>stage: {stageId}</div>
+          <div style={stageBadgeStyle}>{getStageDisplayName(stageId)}</div>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <img
