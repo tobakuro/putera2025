@@ -3,11 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { RigidBody, RapierRigidBody, interactionGroups } from '@react-three/rapier';
 import * as THREE from 'three';
 import { useGLTF } from '@react-three/drei';
-import {
-  ENEMY_BULLET_SPEED,
-  ENEMY_BULLET_LIFETIME,
-  ENEMY_BULLET_DAMAGE,
-} from '../../../constants/weapons';
+import { ENEMY_BULLET_SPEED, ENEMY_BULLET_LIFETIME } from '../../../constants/weapons';
 import useGameStore from '../../../stores/useGameStore';
 
 type EnemyBulletProps = {
@@ -15,6 +11,7 @@ type EnemyBulletProps = {
   startPosition: THREE.Vector3;
   direction: THREE.Vector3;
   createdAt: number;
+  damage: number;
   onExpire: (id: number) => void;
 };
 
@@ -23,6 +20,7 @@ export default function EnemyBullet({
   startPosition,
   direction,
   createdAt,
+  damage,
   onExpire,
 }: EnemyBulletProps) {
   const bulletRef = useRef<RapierRigidBody>(null);
@@ -47,7 +45,7 @@ export default function EnemyBullet({
 
     // プレイヤーに当たった場合
     if (udObj?.type === 'player') {
-      takeDamage(ENEMY_BULLET_DAMAGE, 'Enemy:sniper:bullet', Date.now() / 1000);
+      takeDamage(damage, 'Enemy:sniper:bullet', Date.now() / 1000);
     }
 
     setHasHit(true);

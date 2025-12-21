@@ -250,6 +250,7 @@ export default function Enemy({ enemy, playerPosition }: EnemyProps) {
             startPosition={bullet.startPosition}
             direction={bullet.direction}
             createdAt={bullet.createdAt}
+            damage={stats.damage}
             onExpire={handleBulletExpire}
           />
         ))}
