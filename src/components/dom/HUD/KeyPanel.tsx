@@ -31,6 +31,8 @@ export default function KeyPanel() {
     }
     prevKeysRef.current = keysCollected;
   }, [keysCollected]);
+  const objectiveText =
+    totalKeys > 0 && keysCollected >= totalKeys ? '目的: ゴールを探せ' : '目的: 鍵を探せ';
 
   return (
     <div style={{ position: 'absolute', right: 16, top: 16 }}>
@@ -59,7 +61,7 @@ export default function KeyPanel() {
             <div style={{ fontSize: 14 }}>
               鍵: {keysCollected} / {totalKeys}
             </div>
-            <div style={{ fontSize: 12, opacity: 0.8 }}>目的: 鍵を探せ</div>
+            <div style={{ fontSize: 12, opacity: 0.8 }}>{objectiveText}</div>
           </div>
         </div>
       </div>
